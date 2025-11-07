@@ -33,3 +33,23 @@ export const authorize = (...roles) => {
     next();
   };
 };
+
+export const requireAdmin = async (req, res, next) => {
+    try {
+      // Double-check user is actually admin in database
+      const currentUser = await User.findById(req.user._id);
+      
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({
+          message: 'Admin privileges required'
+        });
+      }
+  
+      next();
+    } catch (error) {
+      console.error('Admin middleware error:', error);
+      res.status(500).json({
+        message: 'Server error during admin verification'
+      });
+    }
+  };

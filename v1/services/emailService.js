@@ -223,7 +223,7 @@ export const sendUserWelcomeEmail = async (user) => {
   
     //   const transporter = createTransporter();
   
-      const mailOptions = {
+      const msg = {
         from: process.env.FROM_EMAIL,
         to: user.email,
         subject: `Welcome to Our Blog, ${user.username}! 🎉`,
@@ -338,7 +338,7 @@ export const sendUserWelcomeEmail = async (user) => {
         `,
       };
   
-      await sgMail.send(mailOptions);
+      await sgMail.send(msg);
       console.log('✅ User welcome email sent successfully!');
       return { success: true };
     } catch (error) {

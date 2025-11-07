@@ -1,52 +1,48 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { 
-  getPosts, 
-  getPostBySlug, 
-  createPost, 
-  updatePost, 
-  deletePost 
-} from '../controllers/postController.js';
-import { authenticate, authorize } from '../middleware/protect.js';
+import * as postController from '../controllers/postController.js';
+import { authenticate, requireAdmin } from '../middleware/protect.js';
 
 const router = express.Router();
 
-// @route   GET /api/posts
-// @desc    Get all published posts
-// @access  Public
-router.get('/', getPosts);
-
-// @route   GET /api/posts/:slug
-// @desc    Get single post by slug
-// @access  Public
-router.get('/:slug', getPostBySlug);
 
 // @route   POST /api/posts
 // @desc    Create a new post
 // @access  Private/Admin
-router.post('/', [
+router.post('/create', [
   authenticate,
-  authorize('admin'),
+  requireAdmin,
   body('title').notEmpty().withMessage('Title is required'),
   body('content').notEmpty().withMessage('Content is required')
-], createPost);
+], postController.createPost);
 
 // @route   PUT /api/posts/:id
 // @desc    Update a post
 // @access  Private/Admin
-router.put('/:id', [
+router.put('/update/:id', [
   authenticate,
-  authorize('admin'),
+  requireAdmin,
   body('title').optional().notEmpty().withMessage('Title cannot be empty'),
   body('content').optional().notEmpty().withMessage('Content cannot be empty')
-], updatePost);
+], postController.updatePost);
 
 // @route   DELETE /api/posts/:id
 // @desc    Delete a post
 // @access  Private/Admin
-router.delete('/:id', [
+router.delete('/delete/:id', [
   authenticate, 
-  authorize('admin')
-], deletePost);
+  requireAdmin
+], postController.deletePost);
+
+
+// @route   GET /api/posts
+// @desc    Get all published posts
+// @access  Public
+router.get('/', postController.getPosts);
+
+// @route   GET /api/posts/:slug
+// @desc    Get single post by slug
+// @access  Public
+router.get('/:slug', postController.getPostBySlug);
 
 export default router;

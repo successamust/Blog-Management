@@ -40,6 +40,9 @@ export const getPostBySlug = async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
+    post.viewCount += 1;
+    await post.save();
+
     res.json(post);
   } catch (error) {
     console.error('Get post error:', error);

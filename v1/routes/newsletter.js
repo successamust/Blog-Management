@@ -1,14 +1,7 @@
 import express from 'express';
 import { body } from 'express-validator';
-import {
-  subscribe,
-  unsubscribe,
-  sendNewsletterToSubscribers,
-  notifyNewPost,
-  getSubscriberStats,
-  getAllSubscribers
-} from '../controllers/newsletterController.js';
-import { authenticate, authorize } from '../middleware/protect.js';
+import * as newsletterController from '../controllers/newsletterController.js';
+import { authenticate, authorize, requireAdmin } from '../middleware/protect.js';
 
 const router = express.Router();
 
@@ -20,7 +13,7 @@ router.post('/subscribe', [
     .isEmail()
     .withMessage('Please enter a valid email address')
     .normalizeEmail()
-], subscribe);
+], newsletterController.subscribe);
 
 // @route   POST /api/newsletter/unsubscribe
 // @desc    Unsubscribe from newsletter
@@ -30,14 +23,14 @@ router.post('/unsubscribe', [
     .isEmail()
     .withMessage('Please enter a valid email address')
     .normalizeEmail()
-], unsubscribe);
+], newsletterController.unsubscribe);
 
 // @route   POST /api/newsletter/send
 // @desc    Send newsletter to all subscribers
 // @access  Private/Admin
 router.post('/send', [
   authenticate,
-  authorize('admin'),
+  requireAdmin,
   body('subject')
     .notEmpty()
     .withMessage('Subject is required')
@@ -48,30 +41,30 @@ router.post('/send', [
     .withMessage('Content is required')
     .isLength({ min: 10 })
     .withMessage('Content must be at least 10 characters long')
-], sendNewsletterToSubscribers);
+], newsletterController.sendNewsletterToSubscribers);
 
 // @route   POST /api/newsletter/notify-new-post/:postId
 // @desc    Send new post notification to subscribers
 // @access  Private/Admin
 router.post('/notify-new-post/:postId', [
   authenticate,
-  authorize('admin')
-], notifyNewPost);
+  requireAdmin
+], newsletterController.notifyNewPost);
 
 // @route   GET /api/newsletter/stats
 // @desc    Get subscriber statistics
 // @access  Private/Admin
 router.get('/stats', [
   authenticate,
-  authorize('admin')
-], getSubscriberStats);
+  requireAdmin
+], newsletterController.getSubscriberStats);
 
 // @route   GET /api/newsletter/subscribers
 // @desc    Get all subscribers with pagination
 // @access  Private/Admin
 router.get('/subscribers', [
   authenticate,
-  authorize('admin')
-], getAllSubscribers);
+  requireAdmin
+], newsletterController.getAllSubscribers);
 
 export default router;

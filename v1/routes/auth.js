@@ -1,7 +1,7 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { register, login, getMe } from '../controllers/authController.js';
-import { authenticate } from '../middleware/protect.js';
+import * as authController from '../controllers/authController.js';
+import { authenticate, requireAdmin } from '../middleware/protect.js';
 
 const router = express.Router();
 
@@ -12,7 +12,7 @@ router.post('/register', [
   body('username').isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
   body('email').isEmail().withMessage('Please enter a valid email'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
-], register);
+], authController.register);
 
 // @route   POST /api/auth/login
 // @desc    Login user
@@ -20,11 +20,40 @@ router.post('/register', [
 router.post('/login', [
   body('email').isEmail().withMessage('Please enter a valid email'),
   body('password').exists().withMessage('Password is required')
-], login);
+], authController.login);
 
 // @route   GET /api/auth/me
 // @desc    Get current user
 // @access  Private
-router.get('/me', authenticate, getMe);
+router.get('/me', authenticate, authController.getMe);
+
+// @route   GET /api/users
+// @desc    Get all users (Admin only)
+// @access  Private/Admin
+router.get('/', [authenticate, requireAdmin], authController.getAllUsers);
+
+// @route   GET /api/users/stats
+// @desc    Get user statistics (Admin only)
+// @access  Private/Admin
+router.get('/stats', [authenticate, requireAdmin], authController.getUserStats);
+
+// @route   GET /api/users/:userId
+// @desc    Get user profile
+// @access  Public
+router.get('/profile/:userId', authController.getUserProfile);
+
+// @route   PUT /api/users/:userId
+// @desc    Update user profile
+// @access  Private
+router.put('update/:userId', [
+  authenticate,
+  body('username').optional().isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
+  body('email').optional().isEmail().withMessage('Please enter a valid email')
+], authController.updateUserProfile);
+
+// @route   DELETE /api/users/:userId
+// @desc    Delete user account
+// @access  Private
+router.delete('/delete/:userId', authenticate, authController.deleteUser);
 
 export default router;
