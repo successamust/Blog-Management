@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
 import User from '../models/user.js';
+import { sendUserWelcomeEmail } from '../services/emailService.js';
 
 // Generate JWT Token
 const generateToken = (userId) => {
@@ -38,6 +39,19 @@ export const register = async (req, res) => {
 
     // Generate token
     const token = generateToken(user._id);
+
+    // Send welcome email (don't block the response if it fails)
+    try {
+        await sendUserWelcomeEmail({
+          username: user.username,
+          email: user.email,
+          role: user.role
+        });
+        console.log('✅ User welcome email sent successfully');
+      } catch (emailError) {
+        console.error('❌ Failed to send welcome email, but user was created:', emailError.message);
+        // Don't throw error - user registration should still succeed
+      }
 
     res.status(201).json({
       message: 'User created successfully',
