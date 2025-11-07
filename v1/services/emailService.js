@@ -307,7 +307,7 @@ export const sendUserWelcomeEmail = async (user) => {
                 </div>
   
                 <div style="text-align: center;">
-                  <a href="${process.env.BASE_URL}/api/posts" class="cta-button">Start Exploring Posts</a>
+                  <a href="${process.env.BASE_URL}/v1/posts" class="cta-button">Start Exploring Posts</a>
                 </div>
   
                 ${user.role === 'admin' ? `
