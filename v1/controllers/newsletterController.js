@@ -1,0 +1,277 @@
+import { validationResult } from 'express-validator';
+import Subscriber from '../models/subscriber.js';
+import Post from '../models/post.js';
+import { sendNewsletter, sendWelcomeEmail, sendNewPostNotification } from '../services/emailService.js';
+
+// Subscribe to newsletter
+export const subscribe = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email } = req.body;
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Please enter a valid email address' });
+    }
+
+    // Check if already subscribed
+    const existingSubscriber = await Subscriber.findOne({ email });
+    if (existingSubscriber) {
+      if (existingSubscriber.isActive) {
+        return res.status(400).json({ message: 'This email is already subscribed to our newsletter' });
+      } else {
+        // Reactivate subscription
+        existingSubscriber.isActive = true;
+        existingSubscriber.subscriptionDate = new Date();
+        await existingSubscriber.save();
+        
+        try {
+          await sendWelcomeEmail(email);
+        } catch (emailError) {
+          console.error('Failed to send welcome email:', emailError);
+          // Continue even if welcome email fails
+        }
+        
+        return res.json({ 
+          message: 'Subscription reactivated successfully! Welcome back!' 
+        });
+      }
+    }
+
+    // Create new subscription
+    const subscriber = new Subscriber({ email });
+    await subscriber.save();
+    
+    try {
+      await sendWelcomeEmail(email);
+    } catch (emailError) {
+      console.error('Failed to send welcome email:', emailError);
+      // Continue even if welcome email fails
+    }
+
+    res.status(201).json({ 
+      message: 'Successfully subscribed to our newsletter! Check your email for a welcome message.' 
+    });
+  } catch (error) {
+    console.error('Subscribe error:', error);
+    
+    if (error.code === 11000) {
+      return res.status(400).json({ message: 'This email is already subscribed' });
+    }
+    
+    res.status(500).json({ 
+      message: 'Failed to subscribe. Please try again later.',
+      error: process.env.NODE_ENV === 'production' ? undefined : error.message 
+    });
+  }
+};
+
+// Unsubscribe from newsletter
+export const unsubscribe = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email } = req.body;
+
+    const subscriber = await Subscriber.findOne({ email });
+    if (!subscriber) {
+      return res.status(400).json({ message: 'Email not found in our subscription list' });
+    }
+
+    if (!subscriber.isActive) {
+      return res.status(400).json({ message: 'This email is already unsubscribed' });
+    }
+
+    subscriber.isActive = false;
+    await subscriber.save();
+
+    res.json({ 
+      message: 'Successfully unsubscribed from our newsletter. Sorry to see you go!' 
+    });
+  } catch (error) {
+    console.error('Unsubscribe error:', error);
+    res.status(500).json({ 
+      message: 'Failed to unsubscribe. Please try again later.',
+      error: process.env.NODE_ENV === 'production' ? undefined : error.message 
+    });
+  }
+};
+
+// Send custom newsletter
+export const sendNewsletterToSubscribers = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { subject, content } = req.body;
+
+    if (!subject || !content) {
+      return res.status(400).json({ 
+        message: 'Both subject and content are required' 
+      });
+    }
+
+    // Get active subscribers
+    const subscribers = await Subscriber.find({ isActive: true });
+    
+    if (subscribers.length === 0) {
+      return res.status(400).json({ 
+        message: 'No active subscribers found' 
+      });
+    }
+
+    console.log(`Sending newsletter to ${subscribers.length} subscribers...`);
+
+    // Send newsletter using Resend
+    const result = await sendNewsletter(subscribers, subject, content);
+
+    res.json({
+      message: 'Newsletter sent successfully!',
+      stats: {
+        totalSubscribers: subscribers.length,
+        successful: result.successful,
+        failed: result.failed,
+        successRate: `${((result.successful / subscribers.length) * 100).toFixed(1)}%`
+      },
+      details: process.env.NODE_ENV === 'production' ? undefined : result.results
+    });
+  } catch (error) {
+    console.error('Send newsletter error:', error);
+    res.status(500).json({ 
+      message: 'Failed to send newsletter. Please try again later.',
+      error: process.env.NODE_ENV === 'production' ? undefined : error.message 
+    });
+  }
+};
+
+// Send new post notification
+export const notifyNewPost = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.postId).populate('author', 'username');
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    if (!post.isPublished) {
+      return res.status(400).json({ 
+        message: 'Cannot send notifications for unpublished posts' 
+      });
+    }
+
+    // Get active subscribers
+    const subscribers = await Subscriber.find({ isActive: true });
+    
+    if (subscribers.length === 0) {
+      return res.status(400).json({ 
+        message: 'No active subscribers to notify' 
+      });
+    }
+
+    console.log(`Notifying ${subscribers.length} subscribers about new post: ${post.title}`);
+
+    // Send new post notifications using Resend
+    const result = await sendNewPostNotification(subscribers, post);
+
+    res.json({
+      message: 'New post notifications sent successfully!',
+      post: {
+        title: post.title,
+        slug: post.slug
+      },
+      stats: {
+        totalSubscribers: subscribers.length,
+        successful: result.successful,
+        failed: result.failed,
+        successRate: `${((result.successful / subscribers.length) * 100).toFixed(1)}%`
+      }
+    });
+  } catch (error) {
+    console.error('Notify new post error:', error);
+    res.status(500).json({ 
+      message: 'Failed to send post notifications. Please try again later.',
+      error: process.env.NODE_ENV === 'production' ? undefined : error.message 
+    });
+  }
+};
+
+// Get subscriber statistics
+export const getSubscriberStats = async (req, res) => {
+  try {
+    const totalSubscribers = await Subscriber.countDocuments();
+    const activeSubscribers = await Subscriber.countDocuments({ isActive: true });
+    const inactiveSubscribers = await Subscriber.countDocuments({ isActive: false });
+    
+    // Get subscription growth (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const recentSubscribers = await Subscriber.countDocuments({
+      subscriptionDate: { $gte: thirtyDaysAgo }
+    });
+
+    res.json({
+      totalSubscribers,
+      activeSubscribers,
+      inactiveSubscribers,
+      engagementRate: totalSubscribers > 0 ? 
+        `${((activeSubscribers / totalSubscribers) * 100).toFixed(1)}%` : '0%',
+      recentSubscribers,
+      stats: {
+        total: totalSubscribers,
+        active: activeSubscribers,
+        inactive: inactiveSubscribers,
+        recent: recentSubscribers
+      }
+    });
+  } catch (error) {
+    console.error('Get stats error:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch subscriber statistics',
+      error: process.env.NODE_ENV === 'production' ? undefined : error.message 
+    });
+  }
+};
+
+// Get all subscribers (for admin)
+export const getAllSubscribers = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+
+    const subscribers = await Subscriber.find()
+      .sort({ subscriptionDate: -1 })
+      .skip(skip)
+      .limit(limit)
+      .select('-__v');
+
+    const total = await Subscriber.countDocuments();
+
+    res.json({
+      subscribers,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalSubscribers: total,
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1
+      }
+    });
+  } catch (error) {
+    console.error('Get all subscribers error:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch subscribers',
+      error: process.env.NODE_ENV === 'production' ? undefined : error.message 
+    });
+  }
+};
