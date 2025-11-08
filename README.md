@@ -51,7 +51,7 @@
 ```bash
 # 1. Clone and install
 git clone <repository-url>
-cd "Blog Management"
+cd "Blog Management with Newsletter"
 npm install
 
 # 2. Create .env file
@@ -62,7 +62,18 @@ cp .env.example .env  # Or create manually
 npm run dev
 
 # 5. Test the API
+# Local development:
+curl http://localhost:3050/health
+
+# Production (deployed):
 curl https://blog-management-sx5c.onrender.com/health
+
+# 6. Access API Documentation
+# Local development:
+# Open http://localhost:3050/api-docs in your browser
+
+# Production (deployed):
+# Open https://blog-management-sx5c.onrender.com/api-docs in your browser
 ```
 
 **Expected Response:**
@@ -203,7 +214,11 @@ npm start
 ### Step 5: Verify Installation
 
 ```bash
+# Local development:
 curl http://localhost:3050/health
+
+# Production (deployed):
+curl https://blog-management-sx5c.onrender.com/health
 ```
 
 ---
@@ -211,12 +226,20 @@ curl http://localhost:3050/health
 ## 📡 API Documentation
 
 ### Base URL
+
+**Production (Deployed):**
+```
+https://blog-management-sx5c.onrender.com/v1
+```
+
+**Local Development:**
 ```
 http://localhost:3050/v1
 ```
 
 > **Note:** All endpoints below are relative to the base URL.  
-> Example: `/auth/register` = `http://localhost:3050/v1/auth/register`
+> **Production Example:** `/auth/register` = `https://blog-management-sx5c.onrender.com/v1/auth/register`  
+> **Local Example:** `/auth/register` = `http://localhost:3050/v1/auth/register`
 
 ---
 
@@ -375,6 +398,18 @@ Authorization: Bearer <your_jwt_token>
 
 ### Register User
 
+**Production:**
+```bash
+curl -X POST https://blog-management-sx5c.onrender.com/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "johndoe",
+    "email": "john@example.com",
+    "password": "password123"
+  }'
+```
+
+**Local Development:**
 ```bash
 curl -X POST http://localhost:3050/v1/auth/register \
   -H "Content-Type: application/json" \
@@ -387,6 +422,17 @@ curl -X POST http://localhost:3050/v1/auth/register \
 
 ### Login
 
+**Production:**
+```bash
+curl -X POST https://blog-management-sx5c.onrender.com/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com",
+    "password": "password123"
+  }'
+```
+
+**Local Development:**
 ```bash
 curl -X POST http://localhost:3050/v1/auth/login \
   -H "Content-Type: application/json" \
@@ -406,6 +452,22 @@ curl -X POST http://localhost:3050/v1/auth/login \
 
 ### Create Post (Admin)
 
+**Production:**
+```bash
+curl -X POST https://blog-management-sx5c.onrender.com/v1/posts/create \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <admin_token>" \
+  -d '{
+    "title": "Getting Started with Node.js",
+    "content": "This is a comprehensive guide...",
+    "excerpt": "Learn the basics of Node.js",
+    "category": "<category_id>",
+    "tags": ["nodejs", "javascript", "backend"],
+    "isPublished": true
+  }'
+```
+
+**Local Development:**
 ```bash
 curl -X POST http://localhost:3050/v1/posts/create \
   -H "Content-Type: application/json" \
@@ -422,6 +484,16 @@ curl -X POST http://localhost:3050/v1/posts/create \
 
 ### Subscribe to Newsletter
 
+**Production:**
+```bash
+curl -X POST https://blog-management-sx5c.onrender.com/v1/newsletters/subscribe \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "subscriber@example.com"
+  }'
+```
+
+**Local Development:**
 ```bash
 curl -X POST http://localhost:3050/v1/newsletters/subscribe \
   -H "Content-Type: application/json" \
@@ -432,12 +504,25 @@ curl -X POST http://localhost:3050/v1/newsletters/subscribe \
 
 ### Search Posts
 
+**Production:**
+```bash
+curl "https://blog-management-sx5c.onrender.com/v1/search?q=nodejs&limit=10&page=1"
+```
+
+**Local Development:**
 ```bash
 curl "http://localhost:3050/v1/search?q=nodejs&limit=10&page=1"
 ```
 
 ### Like a Post
 
+**Production:**
+```bash
+curl -X POST https://blog-management-sx5c.onrender.com/v1/interactions/:postId/like \
+  -H "Authorization: Bearer <user_token>"
+```
+
+**Local Development:**
 ```bash
 curl -X POST http://localhost:3050/v1/interactions/:postId/like \
   -H "Authorization: Bearer <user_token>"
@@ -446,6 +531,15 @@ curl -X POST http://localhost:3050/v1/interactions/:postId/like \
 ### Password Reset Flow
 
 **1. Request Reset:**
+
+**Production:**
+```bash
+curl -X POST https://blog-management-sx5c.onrender.com/v1/auth/forgot-password \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@example.com"}'
+```
+
+**Local Development:**
 ```bash
 curl -X POST http://localhost:3050/v1/auth/forgot-password \
   -H "Content-Type: application/json" \
@@ -453,6 +547,18 @@ curl -X POST http://localhost:3050/v1/auth/forgot-password \
 ```
 
 **2. Reset Password:**
+
+**Production:**
+```bash
+curl -X POST https://blog-management-sx5c.onrender.com/v1/auth/reset-password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "reset_token_from_email",
+    "password": "newpassword123"
+  }'
+```
+
+**Local Development:**
 ```bash
 curl -X POST http://localhost:3050/v1/auth/reset-password \
   -H "Content-Type: application/json" \
@@ -463,6 +569,19 @@ curl -X POST http://localhost:3050/v1/auth/reset-password \
 ```
 
 **3. Change Password (Authenticated):**
+
+**Production:**
+```bash
+curl -X POST https://blog-management-sx5c.onrender.com/v1/auth/change-password \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <user_token>" \
+  -d '{
+    "currentPassword": "oldpassword123",
+    "newPassword": "newpassword123"
+  }'
+```
+
+**Local Development:**
 ```bash
 curl -X POST http://localhost:3050/v1/auth/change-password \
   -H "Content-Type: application/json" \
@@ -632,6 +751,13 @@ Blog Management with Newsletter/
 - ✅ **Email Verification** - Secure reset flow
 - ✅ **CORS Configuration** - Cross-origin protection
 - ✅ **Environment Variables** - Sensitive data protection
+- ✅ **Rate Limiting** - Protection against brute force and DDoS attacks
+  - General API: 100 requests per 15 minutes
+  - Authentication: 5 requests per 15 minutes
+  - Password Reset: 3 requests per hour
+  - Newsletter: 10 requests per hour
+  - Image Upload: 20 requests per 15 minutes
+- ✅ **Error Logging** - Winston logger for monitoring and debugging
 
 ### Best Practices
 
@@ -681,10 +807,51 @@ Uses `nodemon` for automatic server restart on file changes.
 ### Available Scripts
 
 ```bash
-npm start      # Start production server
-npm run dev    # Start development server with nodemon
-npm test       # Run tests (if configured)
+npm start          # Start production server
+npm run dev        # Start development server with nodemon
+npm test           # Run all tests
+npm run test:watch # Run tests in watch mode
+npm run test:coverage # Run tests with coverage report
 ```
+
+### API Documentation
+
+Once the server is running, access the interactive API documentation at:
+
+**Production (Deployed):**
+- **Swagger UI**: `https://blog-management-sx5c.onrender.com/api-docs`
+
+**Local Development:**
+- **Swagger UI**: `http://localhost:3050/api-docs`
+
+The documentation includes:
+- All API endpoints
+- Request/response schemas
+- Authentication requirements
+- Example requests and responses
+- Server selector to switch between development and production
+
+### Testing
+
+See [TESTING.md](./TESTING.md) for detailed testing information.
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+```
+
+### Logging
+
+The application uses Winston for structured logging:
+- **Error logs**: `logs/error.log`
+- **Combined logs**: `logs/combined.log`
+- **Exceptions**: `logs/exceptions.log`
+- **Rejections**: `logs/rejections.log`
+
+Logs are automatically rotated when they reach 5MB.
 
 ### Environment Setup
 
