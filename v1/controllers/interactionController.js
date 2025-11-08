@@ -1,6 +1,5 @@
 import Post from '../models/post.js';
 
-// Like a post
 export const likePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.postId);
@@ -18,7 +17,6 @@ export const likePost = async (req, res) => {
     const hasDisliked = post.dislikes.includes(userId);
 
     if (hasLiked) {
-      // Unlike the post
       post.likes.pull(userId);
       await post.save();
       
@@ -30,12 +28,10 @@ export const likePost = async (req, res) => {
       });
     }
 
-    // Remove from dislikes if previously disliked
     if (hasDisliked) {
       post.dislikes.pull(userId);
     }
 
-    // Add to likes
     post.likes.push(userId);
     await post.save();
 
@@ -54,7 +50,6 @@ export const likePost = async (req, res) => {
   }
 };
 
-// Dislike a post
 export const dislikePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.postId);
@@ -72,7 +67,6 @@ export const dislikePost = async (req, res) => {
     const hasLiked = post.likes.includes(userId);
 
     if (hasDisliked) {
-      // Remove dislike
       post.dislikes.pull(userId);
       await post.save();
       
@@ -84,12 +78,10 @@ export const dislikePost = async (req, res) => {
       });
     }
 
-    // Remove from likes if previously liked
     if (hasLiked) {
       post.likes.pull(userId);
     }
 
-    // Add to dislikes
     post.dislikes.push(userId);
     await post.save();
 
@@ -108,7 +100,6 @@ export const dislikePost = async (req, res) => {
   }
 };
 
-// Share a post
 export const sharePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.postId);
@@ -121,7 +112,6 @@ export const sharePost = async (req, res) => {
       return res.status(400).json({ message: 'Cannot share an unpublished post' });
     }
 
-    // Increment share count
     post.shares += 1;
     await post.save();
 
@@ -139,7 +129,6 @@ export const sharePost = async (req, res) => {
   }
 };
 
-// Get post interactions
 export const getPostInteractions = async (req, res) => {
   try {
     const post = await Post.findById(req.params.postId)
@@ -165,8 +154,8 @@ export const getPostInteractions = async (req, res) => {
         engagementRate: post.engagementRate
       },
       userInteractions,
-      recentLikers: post.likes.slice(0, 5), // Show recent 5 likers
-      recentDislikers: post.dislikes.slice(0, 5) // Show recent 5 dislikers
+      recentLikers: post.likes.slice(0, 5),
+      recentDislikers: post.dislikes.slice(0, 5)
     });
   } catch (error) {
     console.error('Get post interactions error:', error);
@@ -177,7 +166,6 @@ export const getPostInteractions = async (req, res) => {
   }
 };
 
-// Get user's liked posts
 export const getUserLikedPosts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;

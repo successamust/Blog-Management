@@ -8,12 +8,9 @@ import connectDB from './v1/config/db.js';
 const app = express()
 dotenv.config();
 
-// DIAGNOSTIC: log before attempting connect
-console.log('starting app — before connectDB()', { NODE_ENV: process.env.NODE_ENV, PORT: process.env.PORT });
-
 connectDB()
-  .then(() => console.log('connectDB() resolved'))
-  .catch(err => console.error('connectDB() rejected', err));
+  .then(() => console.log('Database connected successfully'))
+  .catch(err => console.error('Database connection failed:', err));
 
 app.use(cors({origin: "*"}))
 app.use(bodyParser.json());
@@ -31,7 +28,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// quick health endpoint for fast checks
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', uptime: process.uptime() });
 });

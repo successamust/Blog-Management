@@ -36,7 +36,6 @@ export const authorize = (...roles) => {
 
 export const requireAdmin = async (req, res, next) => {
     try {
-      // Double-check user is actually admin in database
       const currentUser = await User.findById(req.user._id);
       
       if (!currentUser || currentUser.role !== 'admin') {

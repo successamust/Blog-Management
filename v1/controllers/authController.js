@@ -3,7 +3,6 @@ import { validationResult } from 'express-validator';
 import User from '../models/user.js';
 import { sendUserWelcomeEmail } from '../services/emailService.js';
 
-// Generate JWT Token
 const generateToken = (userId) => {
   return jwt.sign(
     { userId }, 
@@ -12,7 +11,6 @@ const generateToken = (userId) => {
   );
 };
 
-// Register user
 export const register = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -22,7 +20,6 @@ export const register = async (req, res) => {
 
     const { username, email, password } = req.body;
 
-    // Check if user exists
     const existingUser = await User.findOne({ 
       $or: [{ email }, { username }] 
     });
@@ -33,14 +30,11 @@ export const register = async (req, res) => {
       });
     }
 
-    // Create user
     const user = new User({ username, email, password });
     await user.save();
 
-    // Generate token
     const token = generateToken(user._id);
 
-    // Send welcome email (don't block the response if it fails)
     try {
         await sendUserWelcomeEmail({
           username: user.username,
@@ -50,7 +44,6 @@ export const register = async (req, res) => {
         console.log('✅ User welcome email sent successfully');
       } catch (emailError) {
         console.error('❌ Failed to send welcome email, but user was created:', emailError.message);
-        // Don't throw error - user registration should still succeed
       }
 
     res.status(201).json({
@@ -69,7 +62,6 @@ export const register = async (req, res) => {
   }
 };
 
-// Login user
 export const login = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -79,19 +71,16 @@ export const login = async (req, res) => {
 
     const { email, password } = req.body;
 
-    // Find user
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Generate token
     const token = generateToken(user._id);
 
     res.json({
@@ -110,7 +99,6 @@ export const login = async (req, res) => {
   }
 };
 
-// Get current user
 export const getMe = async (req, res) => {
   try {
     res.json({
@@ -127,7 +115,6 @@ export const getMe = async (req, res) => {
   }
 };
 
-// Get all users (Admin only)
 export const getAllUsers = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -161,7 +148,6 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
-// Get user profile
 export const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.params.userId)
@@ -173,10 +159,9 @@ export const getUserProfile = async (req, res) => {
       });
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User not found'       });
     }
 
-    // Get user's post statistics
     const userPosts = await Post.find({ author: req.params.userId, isPublished: true });
     const postStats = {
       totalPosts: userPosts.length,
@@ -198,7 +183,6 @@ export const getUserProfile = async (req, res) => {
   }
 };
 
-// Update user profile
 export const updateUserProfile = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -209,14 +193,12 @@ export const updateUserProfile = async (req, res) => {
     const { username, email } = req.body;
     const userId = req.params.userId;
 
-    // Check if user is updating their own profile or is admin
     if (req.user._id.toString() !== userId && req.user.role !== 'admin') {
       return res.status(403).json({ 
         message: 'Access denied. You can only update your own profile.' 
       });
     }
 
-    // Check if username or email already exists (excluding current user)
     const existingUser = await User.findOne({
       $and: [
         { _id: { $ne: userId } },
@@ -253,12 +235,10 @@ export const updateUserProfile = async (req, res) => {
   }
 };
 
-// Delete user (Admin only or self)
 export const deleteUser = async (req, res) => {
   try {
     const userId = req.params.userId;
 
-    // Check if user is deleting their own account or is admin
     if (req.user._id.toString() !== userId && req.user.role !== 'admin') {
       return res.status(403).json({ 
         message: 'Access denied. You can only delete your own account.' 
@@ -271,7 +251,6 @@ export const deleteUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Optional: Delete user's posts or transfer ownership
     await Post.deleteMany({ author: userId });
 
     res.json({ 
@@ -286,21 +265,18 @@ export const deleteUser = async (req, res) => {
   }
 };
 
-// Get user statistics (Admin only)
 export const getUserStats = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
     const adminUsers = await User.countDocuments({ role: 'admin' });
     const regularUsers = await User.countDocuments({ role: 'user' });
     
-    // New users in last 30 days
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const newUsers = await User.countDocuments({
       createdAt: { $gte: thirtyDaysAgo }
     });
 
-    // User growth percentage
     const previousMonth = new Date();
     previousMonth.setMonth(previousMonth.getMonth() - 1);
     const previousMonthUsers = await User.countDocuments({
@@ -333,7 +309,6 @@ export const getUserStats = async (req, res) => {
   }
 };
 
-// Promote user to admin
 export const promoteToAdmin = async (req, res) => {
     try {
       const errors = validationResult(req);
@@ -355,7 +330,6 @@ export const promoteToAdmin = async (req, res) => {
         });
       }
   
-      // Promote user
       targetUser.role = 'admin';
       await targetUser.save();
   
@@ -376,8 +350,7 @@ export const promoteToAdmin = async (req, res) => {
     }
   };
   
-  // Demote admin to user
-  export const demoteFromAdmin = async (req, res) => {
+export const demoteFromAdmin = async (req, res) => {
     try {
       const targetUser = await User.findById(req.params.userId);
       
@@ -387,7 +360,6 @@ export const promoteToAdmin = async (req, res) => {
         });
       }
   
-      // Prevent self-demotion
       if (targetUser._id.toString() === req.user._id.toString()) {
         return res.status(400).json({ 
           message: 'You cannot demote yourself' 
@@ -400,7 +372,6 @@ export const promoteToAdmin = async (req, res) => {
         });
       }
   
-      // Demote user
       targetUser.role = 'user';
       await targetUser.save();
   

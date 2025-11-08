@@ -2,9 +2,6 @@ import Comment from '../models/comment.js';
 import Post from '../models/post.js';
 import { validationResult } from 'express-validator';
 
-
-
-// Create a new comment
 export const createComment = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -15,7 +12,6 @@ export const createComment = async (req, res) => {
     const { content } = req.body;
     const postId = req.params.postId;
 
-    // Check if post exists and is published
     const post = await Post.findById(postId);
     if (!post || !post.isPublished) {
       return res.status(404).json({ 
@@ -44,7 +40,6 @@ export const createComment = async (req, res) => {
   }
 };
 
-// Update a comment (only by author)
 export const updateComment = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -61,7 +56,6 @@ export const updateComment = async (req, res) => {
       });
     }
 
-    // Check if user is the author
     if (comment.author.toString() !== req.user._id.toString()) {
       return res.status(403).json({ 
         message: 'You can only edit your own comments' 
@@ -84,7 +78,6 @@ export const updateComment = async (req, res) => {
   }
 };
 
-// Delete a comment (author or admin)
 export const deleteComment = async (req, res) => {
   try {
     const comment = await Comment.findById(req.params.commentId);
@@ -95,7 +88,6 @@ export const deleteComment = async (req, res) => {
       });
     }
 
-    // Check if user is author or admin
     const isAuthor = comment.author.toString() === req.user._id.toString();
     const isAdmin = req.user.role === 'admin';
 
@@ -118,7 +110,6 @@ export const deleteComment = async (req, res) => {
   }
 };
 
-// Like/unlike a comment
 export const likeComment = async (req, res) => {
   try {
     const comment = await Comment.findById(req.params.commentId);
@@ -132,7 +123,6 @@ export const likeComment = async (req, res) => {
     const hasLiked = comment.likes.includes(req.user._id);
 
     if (hasLiked) {
-      // Unlike
       comment.likes.pull(req.user._id);
       await comment.save();
       
@@ -143,7 +133,6 @@ export const likeComment = async (req, res) => {
       });
     }
 
-    // Like
     comment.likes.push(req.user._id);
     await comment.save();
 
@@ -160,7 +149,6 @@ export const likeComment = async (req, res) => {
   }
 };
 
-// Get comments for a post
 export const getPostComments = async (req, res) => {
     try {
       const page = parseInt(req.query.page) || 1;

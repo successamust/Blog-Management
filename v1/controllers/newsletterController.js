@@ -3,7 +3,6 @@ import Subscriber from '../models/subscriber.js';
 import Post from '../models/post.js';
 import { sendNewsletter, sendWelcomeEmail, sendNewPostNotification } from '../services/emailService.js';
 
-// Subscribe to newsletter
 export const subscribe = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -13,19 +12,16 @@ export const subscribe = async (req, res) => {
 
     const { email } = req.body;
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ message: 'Please enter a valid email address' });
     }
 
-    // Check if already subscribed
     const existingSubscriber = await Subscriber.findOne({ email });
     if (existingSubscriber) {
       if (existingSubscriber.isActive) {
         return res.status(400).json({ message: 'This email is already subscribed to our newsletter' });
       } else {
-        // Reactivate subscription
         existingSubscriber.isActive = true;
         existingSubscriber.subscriptionDate = new Date();
         await existingSubscriber.save();
@@ -34,7 +30,6 @@ export const subscribe = async (req, res) => {
           await sendWelcomeEmail(email);
         } catch (emailError) {
           console.error('Failed to send welcome email:', emailError);
-          // Continue even if welcome email fails
         }
         
         return res.json({ 
@@ -43,7 +38,6 @@ export const subscribe = async (req, res) => {
       }
     }
 
-    // Create new subscription
     const subscriber = new Subscriber({ email });
     await subscriber.save();
     
@@ -51,7 +45,6 @@ export const subscribe = async (req, res) => {
       await sendWelcomeEmail(email);
     } catch (emailError) {
       console.error('Failed to send welcome email:', emailError);
-      // Continue even if welcome email fails
     }
 
     res.status(201).json({ 
@@ -71,7 +64,6 @@ export const subscribe = async (req, res) => {
   }
 };
 
-// Unsubscribe from newsletter
 export const unsubscribe = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -105,7 +97,6 @@ export const unsubscribe = async (req, res) => {
   }
 };
 
-// Send custom newsletter
 export const sendNewsletterToSubscribers = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -121,7 +112,6 @@ export const sendNewsletterToSubscribers = async (req, res) => {
       });
     }
 
-    // Get active subscribers
     const subscribers = await Subscriber.find({ isActive: true });
     
     if (subscribers.length === 0) {
@@ -132,7 +122,6 @@ export const sendNewsletterToSubscribers = async (req, res) => {
 
     console.log(`Sending newsletter to ${subscribers.length} subscribers...`);
 
-    // Send newsletter using Resend
     const result = await sendNewsletter(subscribers, subject, content);
 
     res.json({
@@ -154,7 +143,6 @@ export const sendNewsletterToSubscribers = async (req, res) => {
   }
 };
 
-// Send new post notification
 export const notifyNewPost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.postId).populate('author', 'username');
@@ -168,7 +156,6 @@ export const notifyNewPost = async (req, res) => {
       });
     }
 
-    // Get active subscribers
     const subscribers = await Subscriber.find({ isActive: true });
     
     if (subscribers.length === 0) {
@@ -179,7 +166,6 @@ export const notifyNewPost = async (req, res) => {
 
     console.log(`Notifying ${subscribers.length} subscribers about new post: ${post.title}`);
 
-    // Send new post notifications using Resend
     const result = await sendNewPostNotification(subscribers, post);
 
     res.json({
@@ -204,14 +190,12 @@ export const notifyNewPost = async (req, res) => {
   }
 };
 
-// Get subscriber statistics
 export const getSubscriberStats = async (req, res) => {
   try {
     const totalSubscribers = await Subscriber.countDocuments();
     const activeSubscribers = await Subscriber.countDocuments({ isActive: true });
     const inactiveSubscribers = await Subscriber.countDocuments({ isActive: false });
     
-    // Get subscription growth (last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
@@ -242,7 +226,6 @@ export const getSubscriberStats = async (req, res) => {
   }
 };
 
-// Get all subscribers (for admin)
 export const getAllSubscribers = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;

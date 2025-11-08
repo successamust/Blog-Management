@@ -1,7 +1,8 @@
 import { validationResult } from 'express-validator';
 import Post from '../models/post.js';
+import Category from '../models/category.js';
+import { deleteImage } from '../utils/imageUpload.js';
 
-// Get all published posts
 export const getPosts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -28,7 +29,6 @@ export const getPosts = async (req, res) => {
   }
 };
 
-// Get single post by slug
 export const getPostBySlug = async (req, res) => {
   try {
     const post = await Post.findOne({ 
@@ -50,7 +50,6 @@ export const getPostBySlug = async (req, res) => {
   }
 };
 
-// Create post
 export const createPost = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -58,7 +57,7 @@ export const createPost = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { title, content, excerpt, featuredImage, tags, isPublished } = req.body;
+    const { title, content, excerpt, featuredImage, tags, isPublished, category } = req.body;
 
     const post = new Post({
       title,
@@ -66,6 +65,7 @@ export const createPost = async (req, res) => {
       excerpt,
       featuredImage,
       tags,
+      category,
       isPublished,
       author: req.user._id,
       publishedAt: isPublished ? new Date() : null
@@ -81,7 +81,6 @@ export const createPost = async (req, res) => {
   }
 };
 
-// Update post
 export const updatePost = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -94,29 +93,37 @@ export const updatePost = async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    // Update fields
+    const isAuthor = post.author.toString() === req.user._id.toString();
+    if (!req.user.isAdmin() && !isAuthor) {
+      return res.status(403).json({ 
+        message: 'Access denied. Not authorized to update this post.' 
+      });
+    }
+
     Object.keys(req.body).forEach(key => {
       if (req.body[key] !== undefined) {
         post[key] = req.body[key];
       }
     });
 
-    // Update publishedAt if publishing for the first time
     if (req.body.isPublished && !post.publishedAt) {
       post.publishedAt = new Date();
     }
 
     await post.save();
     await post.populate('author', 'username');
+    await post.populate('category', 'name slug color');
 
-    res.json(post);
+    res.json({
+      message: 'Post updated successfully',
+      post
+    });
   } catch (error) {
     console.error('Update post error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-// Delete post
 export const deletePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -124,10 +131,77 @@ export const deletePost = async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
+    if (!req.user.isAdmin()) {
+      return res.status(403).json({ 
+        message: 'Admin privileges required to delete posts' 
+      });
+    }
+
+    const featuredImage = post.featuredImage;
+
     await Post.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Post deleted successfully' });
+    
+    if (featuredImage) {
+      setTimeout(() => cleanupOrphanedImage(featuredImage), 5000);
+    }
+
+    res.json({ 
+      message: 'Post deleted successfully' 
+    });
   } catch (error) {
     console.error('Delete post error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ 
+      message: 'Failed to delete post'
+    });
+  }
+};
+
+const cleanupOrphanedImage = async (imageUrl) => {
+  try {
+    const postsUsingImage = await Post.findOne({ 
+      featuredImage: imageUrl 
+    });
+
+    if (!postsUsingImage) {
+      await deleteImage(imageUrl);
+      console.log('Cleaned up orphaned image:', imageUrl);
+    }
+  } catch (error) {
+    console.error('Image cleanup error:', error);
+  }
+};
+
+export const getRelatedPosts = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.postId)
+      .select('tags category');
+    
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    const relatedPosts = await Post.find({
+      _id: { $ne: post._id },
+      isPublished: true,
+      $or: [
+        { tags: { $in: post.tags } },
+        { category: post.category }
+      ]
+    })
+      .populate('author', 'username')
+      .populate('category', 'name slug color')
+      .select('title slug excerpt featuredImage likes viewCount publishedAt')
+      .sort({ engagementRate: -1, publishedAt: -1 })
+      .limit(6);
+
+    res.json({
+      relatedPosts,
+      count: relatedPosts.length
+    });
+  } catch (error) {
+    console.error('Get related posts error:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch related posts'
+    });
   }
 };

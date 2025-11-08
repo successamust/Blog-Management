@@ -1,7 +1,6 @@
 import User from '../models/user.js';
 import { validationResult } from 'express-validator';
 
-// Promote user to admin
 export const promoteToAdmin = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -23,7 +22,6 @@ export const promoteToAdmin = async (req, res) => {
       });
     }
 
-    // Promote user
     targetUser.role = 'admin';
     await targetUser.save();
 
@@ -44,7 +42,6 @@ export const promoteToAdmin = async (req, res) => {
   }
 };
 
-// Demote admin to user
 export const demoteFromAdmin = async (req, res) => {
   try {
     const targetUser = await User.findById(req.params.userId);
@@ -55,7 +52,6 @@ export const demoteFromAdmin = async (req, res) => {
       });
     }
 
-    // Prevent self-demotion
     if (targetUser._id.toString() === req.user._id.toString()) {
       return res.status(400).json({ 
         message: 'You cannot demote yourself' 
@@ -68,7 +64,6 @@ export const demoteFromAdmin = async (req, res) => {
       });
     }
 
-    // Demote user
     targetUser.role = 'user';
     await targetUser.save();
 

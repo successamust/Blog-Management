@@ -3,10 +3,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Initialize SendGrid with your API key
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// Send newsletter to multiple subscribers
 export const sendNewsletter = async (subscribers, subject, content) => {
   try {
     console.log(`📧 Preparing to send newsletter to ${subscribers.length} subscribers`);
@@ -79,7 +77,6 @@ export const sendNewsletter = async (subscribers, subject, content) => {
   }
 };
 
-// Send welcome email to new subscribers
 export const sendWelcomeEmail = async (email) => {
   try {
     console.log(`📧 Sending welcome email to: ${email}`);
@@ -136,7 +133,6 @@ export const sendWelcomeEmail = async (email) => {
   }
 };
 
-// Send new post notification
 export const sendNewPostNotification = async (subscribers, post) => {
   try {
     console.log(`📧 Notifying ${subscribers.length} subscribers about new post: ${post.title}`);
@@ -215,13 +211,9 @@ export const sendNewPostNotification = async (subscribers, post) => {
   }
 };
 
-
-// Send welcome email to new users after signup
 export const sendUserWelcomeEmail = async (user) => {
     try {
       console.log(`📧 Sending user welcome email to: ${user.email}`);
-  
-    //   const transporter = createTransporter();
   
       const msg = {
         from: process.env.FROM_EMAIL,

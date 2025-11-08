@@ -28,10 +28,6 @@ const postSchema = new mongoose.Schema({
   featuredImage: {
     type: String
   },
-  tags: [{
-    type: String,
-    trim: true
-  }],
   isPublished: {
     type: Boolean,
     default: false
@@ -39,7 +35,15 @@ const postSchema = new mongoose.Schema({
   publishedAt: {
     type: Date
   },
-  // New fields for interactions
+  category: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category'
+  },
+  tags: [{
+    type: String,
+    trim: true,
+    lowercase: true
+  }],
   likes: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
@@ -60,12 +64,12 @@ const postSchema = new mongoose.Schema({
   engagementRate: {
     type: Number,
     default: 0
-  }
+  },
+  
 }, {
   timestamps: true
 });
 
-// Generate slug before saving
 postSchema.pre('save', function(next) {
   if (this.isModified('title')) {
     this.slug = this.title
@@ -77,32 +81,38 @@ postSchema.pre('save', function(next) {
   next();
 });
 
-// Calculate engagement rate before saving
 postSchema.pre('save', function(next) {
   const totalInteractions = this.likes.length + this.dislikes.length + this.shares;
-  const totalViews = this.viewCount || 1; // Avoid division by zero
-  this.engagementRate = (totalInteractions / totalViews) * 100;
+  const totalViews = this.viewCount || 1;
+  this.engagementRate = totalViews > 0 ? (totalInteractions / totalViews) * 100 : 0;
   next();
 });
 
-// Virtual for like count
 postSchema.virtual('likeCount').get(function() {
   return this.likes.length;
 });
 
-// Virtual for dislike count
 postSchema.virtual('dislikeCount').get(function() {
   return this.dislikes.length;
 });
 
-// Method to check if user liked the post
 postSchema.methods.hasLiked = function(userId) {
   return this.likes.includes(userId);
 };
 
-// Method to check if user disliked the post
 postSchema.methods.hasDisliked = function(userId) {
   return this.dislikes.includes(userId);
 };
+
+postSchema.index({
+  title: 'text',
+  content: 'text',
+  excerpt: 'text',
+  tags: 'text'
+});
+
+postSchema.index({ isPublished: 1, publishedAt: -1 });
+postSchema.index({ category: 1, publishedAt: -1 });
+postSchema.index({ tags: 1, publishedAt: -1 });
 
 export default mongoose.model('Post', postSchema);
