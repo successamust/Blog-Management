@@ -1,346 +1,381 @@
-# Blog Management with Newsletter
+# Blog Management with Newsletter API
 
-A comprehensive RESTful API for managing a blog platform with integrated newsletter functionality. Built with Node.js, Express, and MongoDB, this application provides features for content management, user authentication, newsletter subscriptions, and engagement tracking.
+> A comprehensive RESTful API for managing a blog platform with integrated newsletter functionality. Built with Node.js, Express, and MongoDB.
 
-##  Features
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-5.1-blue.svg)](https://expressjs.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-7.5-green.svg)](https://www.mongodb.com/)
 
-### Core Features
-- **User Authentication & Authorization**
-  - User registration and login
-  - JWT-based authentication
-  - Role-based access control (User/Admin)
-  - User profile management
-  - Password reset functionality (forgot/reset password)
-  - Change password (authenticated users)
-  - Password reset token validation
+---
 
-- **Blog Post Management**
-  - Create, read, update, and delete blog posts
-  - SEO-friendly slugs
-  - Featured images support
-  - Post publishing/unpublishing
-  - Post categorization and tagging
-  - Related posts suggestions
-  - View count tracking
+## 📑 Table of Contents
 
-- **Content Organization**
-  - Category management
-  - Tag system
-  - Category-based post filtering
-  - Category statistics
+- [Quick Start](#-quick-start)
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Installation](#-installation)
+- [API Documentation](#-api-documentation)
+  - [Base URL](#base-url)
+  - [Authentication Endpoints](#authentication-endpoints)
+  - [Post Endpoints](#post-endpoints)
+  - [Category Endpoints](#category-endpoints)
+  - [Comment Endpoints](#comment-endpoints)
+  - [Interaction Endpoints](#interaction-endpoints)
+  - [Newsletter Endpoints](#newsletter-endpoints)
+  - [Search Endpoints](#search-endpoints)
+  - [Dashboard Endpoints](#dashboard-endpoints)
+  - [Admin Endpoints](#admin-endpoints)
+  - [Image Endpoints](#image-endpoints)
+- [Authentication](#-authentication)
+- [Usage Examples](#-usage-examples)
+- [Database Models](#-database-models)
+- [Project Structure](#-project-structure)
+- [Configuration](#-configuration)
+- [Security](#-security)
+- [Error Handling](#-error-handling)
+- [Development](#-development)
+- [Troubleshooting](#-troubleshooting)
 
-- **User Engagement**
-  - Like/Dislike posts
-  - Share posts
-  - Comments system with likes
-  - Reading history tracking
-  - Engagement rate calculation
+---
 
-- **Newsletter System**
-  - Email subscription management
-  - Newsletter broadcasting
-  - Automatic new post notifications
-  - Subscriber statistics
-  - Unsubscribe functionality
+## 🚀 Quick Start
 
-- **Search & Discovery**
-  - Full-text search across posts
-  - Popular tags
-  - Search suggestions
-  - Tag-based filtering
+### Prerequisites
+- Node.js (v14+)
+- MongoDB (local or Atlas)
+- Cloudinary account
+- Email service (SendGrid/Resend/Nodemailer)
 
-- **Admin Dashboard**
-  - User management (promote/demote admins)
-  - Post management
-  - Newsletter management
-  - Analytics and statistics
-  - Subscriber management
+### 5-Minute Setup
 
-- **Image Management**
-  - Cloudinary integration for image uploads
-  - Automatic image optimization
-  - Image deletion support
+```bash
+# 1. Clone and install
+git clone <repository-url>
+cd "Blog Management"
+npm install
 
-- **User Dashboard**
-  - Personal post history
-  - Comment history
-  - Liked posts
-  - Reading history
+# 2. Create .env file
+cp .env.example .env  # Or create manually
 
-- **Validation & Security**
-  - Custom validation middleware
-  - Input sanitization
-  - Password strength requirements
-  - Secure token generation
+# 3. Configure environment variables (see Configuration section)
+# 4. Start the server
+npm run dev
 
-##  Tech Stack
-
-- **Runtime**: Node.js
-- **Framework**: Express.js 5.1.0
-- **Database**: MongoDB with Mongoose 7.5.0
-- **Authentication**: JWT (jsonwebtoken 9.0.2)
-- **Password Hashing**: bcryptjs 2.4.3
-- **Image Upload**: Cloudinary 2.8.0, Multer 2.0.2
-- **Email Services**: 
-  - SendGrid (@sendgrid/mail 8.1.6)
-  - Nodemailer 7.0.10
-  - Resend 6.4.2
-- **Validation**: express-validator 7.0.1, validator 13.15.20
-- **CORS**: cors 2.8.5
-- **Environment Variables**: dotenv 16.3.1
-- **Cryptography**: crypto (built-in Node.js module)
-
-##  Prerequisites
-
-Before you begin, ensure you have the following installed:
-- Node.js (v14 or higher)
-- npm or yarn
-- MongoDB (local or cloud instance like MongoDB Atlas)
-- Cloudinary account (for image uploads)
-- Email service account (SendGrid, Resend, or Nodemailer configuration)
-
-##  Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd "Blog Management"
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   Create a `.env` file in the root directory with the following variables:
-   ```env
-   # Server Configuration
-   PORT=3050
-
-   # Database
-   MONGODB_URL=mongodb://localhost:27017/blog-management
-   # Or for MongoDB Atlas:
-   # MONGODB_URL=mongodb+srv://username:password@cluster.mongodb.net/blog-management
-
-   # JWT Secret
-   JWT_SECRET=your_super_secret_jwt_key_here
-
-   # Base URL (for email links and password reset)
-   BASE_URL=http://localhost:3050
-
-   # Cloudinary Configuration
-   CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
-   CLOUDINARY_API_KEY=your_cloudinary_api_key
-   CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-
-   # Email Service Configuration (Choose one or more)
-   # SendGrid
-   SENDGRID_API_KEY=your_sendgrid_api_key
-   SENDGRID_FROM_EMAIL=noreply@yourdomain.com
-
-   # Resend
-   RESEND_API_KEY=your_resend_api_key
-   RESEND_FROM_EMAIL=noreply@yourdomain.com
-
-   # Nodemailer (SMTP)
-   SMTP_HOST=smtp.gmail.com
-   SMTP_PORT=587
-   SMTP_USER=your_email@gmail.com
-   SMTP_PASS=your_app_password
-   SMTP_FROM_EMAIL=noreply@yourdomain.com
-   ```
-
-4. **Start the server**
-   ```bash
-   # Development mode (with nodemon)
-   npm run dev
-
-   # Production mode
-   npm start
-   ```
-
-5. **Verify the installation**
-   ```bash
-   curl http://localhost:3050/health
-   ```
-   You should receive: `{"status":"ok","uptime":<seconds>}`
-
-## 📁 Project Structure
-
-```
-Blog Management with Newsletter/
-├── app.js                 # Main application entry point
-├── package.json           # Dependencies and scripts
-├── .env                   # Environment variables (create this)
-└── v1/
-    ├── index.js           # API v1 router
-    ├── config/
-    │   └── db.js          # MongoDB connection
-    ├── controllers/       # Route controllers
-    │   ├── adminController.js
-    │   ├── authController.js
-    │   ├── categoryController.js
-    │   ├── commentController.js
-    │   ├── dashboardController.js
-    │   ├── imageController.js
-    │   ├── interactionController.js
-    │   ├── newsletterController.js
-    │   ├── passwordController.js
-    │   ├── postController.js
-    │   └── searchController.js
-    ├── middleware/
-    │   ├── protect.js     # Authentication & authorization middleware
-    │   └── validation.js # Custom validation middleware
-    ├── models/            # Mongoose models
-    │   ├── category.js
-    │   ├── comment.js
-    │   ├── post.js
-    │   ├── subscriber.js
-    │   └── user.js
-    ├── routes/            # Express routes
-    │   ├── admin.js
-    │   ├── auth.js
-    │   ├── categories.js
-    │   ├── comments.js
-    │   ├── dashboard.js
-    │   ├── images.js
-    │   ├── interactions.js
-    │   ├── newsletter.js
-    │   ├── posts.js
-    │   └── search.js
-    ├── services/
-    │   └── emailService.js # Email service abstraction
-    └── utils/
-        ├── cloudinary.js   # Cloudinary configuration
-        └── imageUpload.js  # Image upload utilities
+# 5. Test the API
+curl http://localhost:3050/health
 ```
 
-##  API Endpoints
+**Expected Response:**
+```json
+{"status":"ok","uptime":<seconds>}
+```
+
+---
+
+## ✨ Features
+
+### 🔐 Authentication & Authorization
+- User registration and login
+- JWT-based authentication
+- Role-based access control (User/Admin)
+- Password reset (forgot/reset/change)
+- User profile management
+
+### 📝 Blog Post Management
+- CRUD operations for posts
+- SEO-friendly slugs
+- Featured images (Cloudinary)
+- Publishing workflow
+- Categories and tags
+- Related posts
+- View tracking & analytics
+
+### 💬 User Engagement
+- Like/Dislike posts
+- Share functionality
+- Comments with replies
+- Reading history
+- Engagement metrics
+
+### 📧 Newsletter System
+- Email subscriptions
+- Newsletter broadcasting
+- Auto new-post notifications
+- Subscriber management
+- Unsubscribe handling
+
+### 🔍 Search & Discovery
+- Full-text search
+- Popular tags
+- Search suggestions
+- Tag-based filtering
+
+### 🎨 Additional Features
+- Image upload/management
+- User dashboard
+- Admin dashboard
+- Category management
+- Input validation
+- Security middleware
+
+---
+
+## 🛠️ Tech Stack
+
+| Category | Technology |
+|----------|-----------|
+| **Runtime** | Node.js |
+| **Framework** | Express.js 5.1.0 |
+| **Database** | MongoDB with Mongoose 7.5.0 |
+| **Authentication** | JWT (jsonwebtoken 9.0.2) |
+| **Password Hashing** | bcryptjs 2.4.3 |
+| **Image Storage** | Cloudinary 2.8.0, Multer 2.0.2 |
+| **Email Services** | SendGrid, Nodemailer, Resend |
+| **Validation** | express-validator 7.0.1, validator 13.15.20 |
+| **Security** | CORS, dotenv, crypto |
+
+---
+
+## 📦 Installation
+
+### Step 1: Clone Repository
+```bash
+git clone <repository-url>
+cd "Blog Management"
+```
+
+### Step 2: Install Dependencies
+```bash
+npm install
+```
+
+### Step 3: Environment Configuration
+
+Create a `.env` file in the root directory:
+
+```env
+# Server Configuration
+PORT=3050
+
+# Database
+MONGODB_URL=mongodb://localhost:27017/blog-management
+# Or for MongoDB Atlas:
+# MONGODB_URL=mongodb+srv://exampleusername:examplepassword@cluster.mongodb.net/...
+
+# JWT Secret
+JWT_SECRET=your_super_secret_jwt_key_here
+
+# Base URL (for email links and password reset)
+BASE_URL=http://localhost:3050
+
+# Cloudinary Configuration
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+
+# Email Service Configuration (Choose one or more)
+# SendGrid
+SENDGRID_API_KEY=your_sendgrid_api_key
+SENDGRID_FROM_EMAIL=noreply@yourdomain.com
+
+# Resend
+RESEND_API_KEY=your_resend_api_key
+RESEND_FROM_EMAIL=noreply@yourdomain.com
+
+# Nodemailer (SMTP)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_app_password
+SMTP_FROM_EMAIL=noreply@yourdomain.com
+```
+
+### Step 4: Start Server
+
+```bash
+# Development mode (with auto-reload)
+npm run dev
+
+# Production mode
+npm start
+```
+
+### Step 5: Verify Installation
+
+```bash
+curl http://localhost:3050/health
+```
+
+---
+
+## 📡 API Documentation
 
 ### Base URL
 ```
 http://localhost:3050/v1
 ```
 
-**Note**: All endpoints below are relative to the base URL. For example, `/auth/register` means `http://localhost:3050/v1/auth/register`
+> **Note:** All endpoints below are relative to the base URL.  
+> Example: `/auth/register` = `http://localhost:3050/v1/auth/register`
 
-### Authentication (`/v1/auth`)
+---
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/auth/register` | Register a new user | No |
-| POST | `/auth/login` | Login user | No |
-| GET | `/auth/me` | Get current user profile | Yes |
-| GET | `/auth/allusers` | Get all users (Admin only) | Admin |
-| GET | `/auth/stats` | Get user statistics (Admin only) | Admin |
-| GET | `/auth/profile/:userId` | Get user profile by ID | No |
-| PUT | `/auth/update/:userId` | Update user profile | Yes |
-| DELETE | `/auth/delete/:userId` | Delete user | Yes |
-| POST | `/auth/forgot-password` | Request password reset | No |
-| POST | `/auth/reset-password` | Reset password with token | No |
-| POST | `/auth/change-password` | Change password (authenticated) | Yes |
-| GET | `/auth/validate-reset-token` | Validate password reset token | No |
+### Authentication Endpoints
 
-### Posts (`/v1/posts`)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| `POST` | `/auth/register` | Register new user | ❌ |
+| `POST` | `/auth/login` | Login user | ❌ |
+| `GET` | `/auth/me` | Get current user | ✅ |
+| `GET` | `/auth/profile/:userId` | Get user profile | ❌ |
+| `PUT` | `/auth/update/:userId` | Update profile | ✅ |
+| `DELETE` | `/auth/delete/:userId` | Delete user | ✅ |
+| `POST` | `/auth/forgot-password` | Request password reset | ❌ |
+| `POST` | `/auth/reset-password` | Reset password | ❌ |
+| `POST` | `/auth/change-password` | Change password | ✅ |
+| `GET` | `/auth/validate-reset-token` | Validate reset token | ❌ |
+| `GET` | `/auth/allusers` | Get all users | 🔒 Admin |
+| `GET` | `/auth/stats` | User statistics | 🔒 Admin |
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/posts` | Get all published posts | No |
-| GET | `/posts/:slug` | Get post by slug | No |
-| GET | `/posts/:postId/related` | Get related posts | No |
-| POST | `/posts/create` | Create a new post | Admin |
-| PUT | `/posts/update/:id` | Update a post | Admin |
-| DELETE | `/posts/delete/:id` | Delete a post | Admin |
+---
 
-### Categories (`/v1/categories`)
+### Post Endpoints
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/categories` | Get all categories | No |
-| GET | `/categories/stats` | Get category statistics | No |
-| GET | `/categories/:slug` | Get category by slug | No |
-| GET | `/categories/:slug/posts` | Get posts by category | No |
-| POST | `/categories/create` | Create a category | Admin |
-| PUT | `/categories/update/:categoryId` | Update a category | Admin |
-| DELETE | `/categories/delete/:categoryId` | Delete a category | Admin |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| `GET` | `/posts` | Get all published posts | ❌ |
+| `GET` | `/posts/:slug` | Get post by slug | ❌ |
+| `GET` | `/posts/:postId/related` | Get related posts | ❌ |
+| `POST` | `/posts/create` | Create new post | 🔒 Admin |
+| `PUT` | `/posts/update/:id` | Update post | 🔒 Admin |
+| `DELETE` | `/posts/delete/:id` | Delete post | 🔒 Admin |
 
-### Comments (`/v1/comments`)
+---
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/:postId/comments` | Get comments for a post | No |
-| POST | `/create/:postId` | Create a comment | Yes |
-| PUT | `/update/:commentId` | Update a comment | Yes |
-| DELETE | `/delete/:commentId` | Delete a comment | Yes |
-| POST | `/like/:commentId` | Like a comment | Yes |
+### Category Endpoints
 
-### Interactions (`/v1/interactions`)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| `GET` | `/categories` | Get all categories | ❌ |
+| `GET` | `/categories/stats` | Category statistics | ❌ |
+| `GET` | `/categories/:slug` | Get category by slug | ❌ |
+| `GET` | `/categories/:slug/posts` | Get posts by category | ❌ |
+| `POST` | `/categories/create` | Create category | 🔒 Admin |
+| `PUT` | `/categories/update/:categoryId` | Update category | 🔒 Admin |
+| `DELETE` | `/categories/delete/:categoryId` | Delete category | 🔒 Admin |
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/:postId/like` | Like a post | Yes |
-| POST | `/:postId/dislike` | Dislike a post | Yes |
-| POST | `/:postId/share` | Share a post | No |
-| GET | `/:postId/interactions` | Get post interactions | No |
-| GET | `/me/likes` | Get user's liked posts | Yes |
+---
 
-### Newsletter (`/v1/newsletters`)
+### Comment Endpoints
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/subscribe` | Subscribe to newsletter | No |
-| POST | `/unsubscribe` | Unsubscribe from newsletter | No |
-| POST | `/send` | Send newsletter to all subscribers | Admin |
-| POST | `/notify-new-post/:postId` | Notify subscribers of new post | Admin |
-| GET | `/stats` | Get subscriber statistics | Admin |
-| GET | `/subscribers` | Get all subscribers | Admin |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| `GET` | `/:postId/comments` | Get post comments | ❌ |
+| `POST` | `/create/:postId` | Create comment | ✅ |
+| `PUT` | `/update/:commentId` | Update comment | ✅ |
+| `DELETE` | `/delete/:commentId` | Delete comment | ✅ |
+| `POST` | `/like/:commentId` | Like comment | ✅ |
 
-### Search (`/v1/search`)
+---
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/` | Search posts | No |
-| GET | `/tags/popular` | Get popular tags | No |
-| GET | `/suggestions` | Get search suggestions | No |
+### Interaction Endpoints
 
-### Dashboard (`/v1/dashboard`)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| `POST` | `/:postId/like` | Like post | ✅ |
+| `POST` | `/:postId/dislike` | Dislike post | ✅ |
+| `POST` | `/:postId/share` | Share post | ❌ |
+| `GET` | `/:postId/interactions` | Get interactions | ❌ |
+| `GET` | `/me/likes` | Get user's liked posts | ✅ |
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/` | Get user dashboard overview | Yes |
-| GET | `/posts` | Get user's posts | Yes |
-| GET | `/comments` | Get user's comments | Yes |
-| GET | `/likes` | Get user's liked posts | Yes |
-| GET | `/history` | Get reading history | Yes |
+---
 
-### Admin (`/v1/admin`)
+### Newsletter Endpoints
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/promote/:userId` | Promote user to admin | Admin |
-| POST | `/demote/:userId` | Demote admin to user | Admin |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| `POST` | `/subscribe` | Subscribe to newsletter | ❌ |
+| `POST` | `/unsubscribe` | Unsubscribe | ❌ |
+| `POST` | `/send` | Send newsletter | 🔒 Admin |
+| `POST` | `/notify-new-post/:postId` | Notify new post | 🔒 Admin |
+| `GET` | `/stats` | Subscriber statistics | 🔒 Admin |
+| `GET` | `/subscribers` | Get all subscribers | 🔒 Admin |
 
-### Images (`/v1/images`)
+---
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/upload` | Upload an image | Admin |
-| GET | `/` | Get image information | Admin |
-| DELETE | `/delete` | Delete an image from Cloudinary | Admin |
+### Search Endpoints
 
-##  Authentication
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| `GET` | `/` | Search posts | ❌ |
+| `GET` | `/tags/popular` | Get popular tags | ❌ |
+| `GET` | `/suggestions` | Get search suggestions | ❌ |
 
-The API uses JWT (JSON Web Tokens) for authentication. Include the token in the Authorization header:
+---
 
-```
+### Dashboard Endpoints
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| `GET` | `/` | Dashboard overview | ✅ |
+| `GET` | `/posts` | User's posts | ✅ |
+| `GET` | `/comments` | User's comments | ✅ |
+| `GET` | `/likes` | User's liked posts | ✅ |
+| `GET` | `/history` | Reading history | ✅ |
+
+---
+
+### Admin Endpoints
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| `POST` | `/promote/:userId` | Promote to admin | 🔒 Admin |
+| `POST` | `/demote/:userId` | Demote from admin | 🔒 Admin |
+
+---
+
+### Image Endpoints
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| `POST` | `/upload` | Upload image | 🔒 Admin |
+| `GET` | `/` | Get image info | 🔒 Admin |
+| `DELETE` | `/delete` | Delete image | 🔒 Admin |
+
+---
+
+**Legend:**
+- ❌ No authentication required
+- ✅ Authentication required
+- 🔒 Admin only
+
+---
+
+## 🔐 Authentication
+
+The API uses **JWT (JSON Web Tokens)** for authentication.
+
+### How to Authenticate
+
+Include the token in the `Authorization` header:
+
+```http
 Authorization: Bearer <your_jwt_token>
 ```
 
-### Example: Register and Login
+### Get Your Token
+
+1. **Register** a new user or **Login** with existing credentials
+2. The response includes a `token` field
+3. Use this token in subsequent requests
+
+---
+
+## 💡 Usage Examples
+
+### Register User
 
 ```bash
-# Register
 curl -X POST http://localhost:3050/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{
@@ -348,8 +383,11 @@ curl -X POST http://localhost:3050/v1/auth/register \
     "email": "john@example.com",
     "password": "password123"
   }'
+```
 
-# Login
+### Login
+
+```bash
 curl -X POST http://localhost:3050/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
@@ -358,9 +396,15 @@ curl -X POST http://localhost:3050/v1/auth/login \
   }'
 ```
 
-##  Usage Examples
+**Response:**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": { ... }
+}
+```
 
-### Create a Post (Admin)
+### Create Post (Admin)
 
 ```bash
 curl -X POST http://localhost:3050/v1/posts/create \
@@ -399,18 +443,16 @@ curl -X POST http://localhost:3050/v1/interactions/:postId/like \
   -H "Authorization: Bearer <user_token>"
 ```
 
-### Forgot Password
+### Password Reset Flow
 
+**1. Request Reset:**
 ```bash
 curl -X POST http://localhost:3050/v1/auth/forgot-password \
   -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com"
-  }'
+  -d '{"email": "user@example.com"}'
 ```
 
-### Reset Password
-
+**2. Reset Password:**
 ```bash
 curl -X POST http://localhost:3050/v1/auth/reset-password \
   -H "Content-Type: application/json" \
@@ -420,8 +462,7 @@ curl -X POST http://localhost:3050/v1/auth/reset-password \
   }'
 ```
 
-### Change Password (Authenticated)
-
+**3. Change Password (Authenticated):**
 ```bash
 curl -X POST http://localhost:3050/v1/auth/change-password \
   -H "Content-Type: application/json" \
@@ -432,114 +473,290 @@ curl -X POST http://localhost:3050/v1/auth/change-password \
   }'
 ```
 
+---
+
 ## 🗄️ Database Models
 
-### User
-- `username` (String, unique, required, 3-30 characters)
-- `email` (String, unique, required)
-- `password` (String, hashed)
-- `role` (Enum: 'user', 'admin')
-- `isActive` (Boolean, default: true)
-- `resetPasswordToken` (String, for password reset)
-- `resetPasswordExpire` (Date, token expiration)
-- `lastPasswordChange` (Date)
-
-### Post
-- `title` (String, required)
-- `content` (String, required)
-- `excerpt` (String, optional)
-- `slug` (String, unique, auto-generated)
-- `author` (ObjectId, ref: User)
-- `category` (ObjectId, ref: Category)
-- `tags` (Array of Strings)
-- `featuredImage` (String)
-- `isPublished` (Boolean)
-- `publishedAt` (Date)
-- `likes`, `dislikes` (Array of User IDs)
-- `shares` (Number)
-- `viewCount` (Number)
-- `engagementRate` (Number, calculated)
-
-### Category
-- `name` (String, required)
-- `slug` (String, unique)
-- `description` (String, optional)
-
-### Comment
-- `content` (String, required, max 1000 characters)
-- `author` (ObjectId, ref: User)
-- `post` (ObjectId, ref: Post)
-- `parentComment` (ObjectId, ref: Comment, optional - for nested replies)
-- `isApproved` (Boolean, default: true)
-- `likes` (Array of User IDs)
-
-### Subscriber
-- `email` (String, unique, required)
-- `isActive` (Boolean)
-- `subscriptionDate` (Date)
-
-##  Security Features
-
-- Password hashing with bcrypt
-- JWT token-based authentication
-- Role-based access control
-- Input validation with express-validator and custom validation middleware
-- Password reset tokens with expiration (1 hour)
-- Secure password reset flow with email verification
-- CORS configuration
-- Environment variable protection
-
-##  Error Handling
-
-The API returns standard HTTP status codes:
-- `200` - Success
-- `201` - Created
-- `400` - Bad Request
-- `401` - Unauthorized
-- `403` - Forbidden
-- `404` - Not Found
-- `500` - Internal Server Error
-
-Error responses follow this format:
-```json
+### User Model
+```javascript
 {
-  "message": "Error description"
+  username: String (3-30 chars, unique, required),
+  email: String (unique, required),
+  password: String (hashed),
+  role: Enum ['user', 'admin'],
+  isActive: Boolean (default: true),
+  resetPasswordToken: String,
+  resetPasswordExpire: Date,
+  lastPasswordChange: Date
 }
 ```
 
-##  Development
+### Post Model
+```javascript
+{
+  title: String (required),
+  content: String (required),
+  excerpt: String (optional),
+  slug: String (unique, auto-generated),
+  author: ObjectId (ref: User),
+  category: ObjectId (ref: Category),
+  tags: [String],
+  featuredImage: String,
+  isPublished: Boolean (default: false),
+  publishedAt: Date,
+  likes: [ObjectId] (ref: User),
+  dislikes: [ObjectId] (ref: User),
+  shares: Number (default: 0),
+  viewCount: Number (default: 0),
+  engagementRate: Number (calculated)
+}
+```
 
-### Running in Development Mode
+### Category Model
+```javascript
+{
+  name: String (required),
+  slug: String (unique),
+  description: String (optional)
+}
+```
+
+### Comment Model
+```javascript
+{
+  content: String (required, max 1000 chars),
+  author: ObjectId (ref: User),
+  post: ObjectId (ref: Post),
+  parentComment: ObjectId (ref: Comment, optional),
+  isApproved: Boolean (default: true),
+  likes: [ObjectId] (ref: User)
+}
+```
+
+### Subscriber Model
+```javascript
+{
+  email: String (unique, required),
+  isActive: Boolean (default: true),
+  subscriptionDate: Date
+}
+```
+
+---
+
+## 📁 Project Structure
+
+```
+Blog Management with Newsletter/
+├── app.js                    # Main entry point
+├── package.json              # Dependencies
+├── .env                      # Environment variables
+└── v1/
+    ├── index.js              # API v1 router
+    ├── config/
+    │   └── db.js             # MongoDB connection
+    ├── controllers/          # Route controllers
+    │   ├── adminController.js
+    │   ├── authController.js
+    │   ├── categoryController.js
+    │   ├── commentController.js
+    │   ├── dashboardController.js
+    │   ├── imageController.js
+    │   ├── interactionController.js
+    │   ├── newsletterController.js
+    │   ├── passwordController.js
+    │   ├── postController.js
+    │   └── searchController.js
+    ├── middleware/
+    │   ├── protect.js        # Auth & authorization
+    │   └── validation.js    # Custom validation
+    ├── models/               # Mongoose models
+    │   ├── category.js
+    │   ├── comment.js
+    │   ├── post.js
+    │   ├── subscriber.js
+    │   └── user.js
+    ├── routes/               # Express routes
+    │   ├── admin.js
+    │   ├── auth.js
+    │   ├── categories.js
+    │   ├── comments.js
+    │   ├── dashboard.js
+    │   ├── images.js
+    │   ├── interactions.js
+    │   ├── newsletter.js
+    │   ├── posts.js
+    │   └── search.js
+    ├── services/
+    │   └── emailService.js   # Email abstraction
+    └── utils/
+        ├── cloudinary.js     # Cloudinary config
+        └── imageUpload.js   # Upload utilities
+```
+
+---
+
+## ⚙️ Configuration
+
+### Required Environment Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `PORT` | Server port | `3050` |
+| `MONGODB_URL` | MongoDB connection string | `mongodb://localhost:27017/blog-management` |
+| `JWT_SECRET` | Secret for JWT signing | `your_secret_key` |
+| `BASE_URL` | Base URL for email links | `http://localhost:3050` |
+
+### Optional Environment Variables
+
+| Variable | Description | Required For |
+|----------|-------------|--------------|
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | Image uploads |
+| `CLOUDINARY_API_KEY` | Cloudinary API key | Image uploads |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret | Image uploads |
+| `SENDGRID_API_KEY` | SendGrid API key | Email service |
+| `RESEND_API_KEY` | Resend API key | Email service |
+| `SMTP_HOST` | SMTP server host | Nodemailer |
+
+---
+
+## 🔒 Security
+
+### Security Features
+
+- ✅ **Password Hashing** - bcrypt with salt rounds
+- ✅ **JWT Authentication** - Token-based auth
+- ✅ **Role-Based Access Control** - User/Admin roles
+- ✅ **Input Validation** - express-validator + custom middleware
+- ✅ **Password Reset Tokens** - 1-hour expiration
+- ✅ **Email Verification** - Secure reset flow
+- ✅ **CORS Configuration** - Cross-origin protection
+- ✅ **Environment Variables** - Sensitive data protection
+
+### Best Practices
+
+1. **Never commit `.env` file**
+2. **Use strong JWT secrets**
+3. **Keep dependencies updated**
+4. **Validate all inputs**
+5. **Use HTTPS in production**
+
+---
+
+## 🚦 Error Handling
+
+### HTTP Status Codes
+
+| Code | Meaning |
+|------|---------|
+| `200` | Success |
+| `201` | Created |
+| `400` | Bad Request |
+| `401` | Unauthorized |
+| `403` | Forbidden |
+| `404` | Not Found |
+| `500` | Internal Server Error |
+
+### Error Response Format
+
+```json
+{
+  "message": "Error description",
+  "errors": ["Detailed error 1", "Detailed error 2"]
+}
+```
+
+---
+
+## 🧪 Development
+
+### Development Mode
 
 ```bash
 npm run dev
 ```
 
-This uses `nodemon` to automatically restart the server on file changes.
+Uses `nodemon` for automatic server restart on file changes.
 
-### Environment Variables
+### Available Scripts
 
-Make sure to set up all required environment variables in your `.env` file. Never commit the `.env` file to version control.
+```bash
+npm start      # Start production server
+npm run dev    # Start development server with nodemon
+npm test       # Run tests (if configured)
+```
 
-##  Dependencies
+### Environment Setup
 
-### Production Dependencies
-- `express` - Web framework
-- `mongoose` - MongoDB ODM
-- `jsonwebtoken` - JWT authentication
-- `bcryptjs` - Password hashing
-- `cloudinary` - Image storage
-- `multer` - File upload handling
-- `express-validator` - Input validation
-- `validator` - String validation utilities
-- `cors` - Cross-origin resource sharing
-- `dotenv` - Environment variable management
-- `@sendgrid/mail`, `nodemailer`, `resend` - Email services
+1. Copy `.env.example` to `.env` (if available)
+2. Fill in all required variables
+3. Never commit `.env` to version control
 
-### Development Dependencies
-- `nodemon` - Development server with auto-reload
+---
 
-##  Contributing
+## 🐛 Troubleshooting
+
+### Database Connection Issues
+
+**Problem:** Cannot connect to MongoDB
+
+**Solutions:**
+- ✅ Verify MongoDB is running
+- ✅ Check `MONGODB_URL` in `.env`
+- ✅ Test network connectivity
+- ✅ Verify credentials for cloud databases
+
+### Authentication Issues
+
+**Problem:** Token invalid or expired
+
+**Solutions:**
+- ✅ Verify `JWT_SECRET` is set
+- ✅ Check token expiration
+- ✅ Ensure `Authorization: Bearer <token>` header format
+- ✅ Regenerate token by logging in again
+
+### Password Reset Issues
+
+**Problem:** Reset link not working
+
+**Solutions:**
+- ✅ Verify `BASE_URL` in `.env`
+- ✅ Check token expiration (1 hour validity)
+- ✅ Ensure email service is configured
+- ✅ Verify token used within expiration window
+
+### Image Upload Issues
+
+**Problem:** Images not uploading
+
+**Solutions:**
+- ✅ Verify Cloudinary credentials
+- ✅ Check file size limits
+- ✅ Ensure proper file format (jpg, png, etc.)
+- ✅ Verify admin authentication
+
+### Email Service Issues
+
+**Problem:** Emails not sending
+
+**Solutions:**
+- ✅ Verify email service API keys
+- ✅ Check service quotas/limits
+- ✅ Ensure proper email configuration
+- ✅ Test with different email service
+
+---
+
+## 📞 Support & Contributing
+
+### Getting Help
+
+- 📧 Open an issue on the repository
+- 📖 Check existing issues
+- 💬 Contact the maintainers
+
+### Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
@@ -547,43 +764,23 @@ Make sure to set up all required environment variables in your `.env` file. Neve
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
+---
+
 ## 📄 License
 
-This project is licensed under the ISC License.
-
-##  Troubleshooting
-
-### Database Connection Issues
-- Ensure MongoDB is running
-- Check `MONGODB_URL` in `.env` file
-- Verify network connectivity for cloud databases
-
-### Authentication Issues
-- Verify `JWT_SECRET` is set in `.env`
-- Check token expiration
-- Ensure token is included in Authorization header
-
-### Password Reset Issues
-- Verify `BASE_URL` is set correctly in `.env` for reset email links
-- Check that reset tokens haven't expired (1 hour validity)
-- Ensure email service is properly configured
-- Verify reset token is used within the expiration window
-
-### Image Upload Issues
-- Verify Cloudinary credentials in `.env`
-- Check file size limits
-- Ensure proper file format
-
-### Email Service Issues
-- Verify email service API keys
-- Check email service quotas
-- Ensure proper email configuration
-
-## 📞 Support
-
-For issues, questions, or contributions, please open an issue on the repository.
+This project is licensed under the **ISC License**.
+See the [LICENSE](./LICENSE) file for more information.
 
 ---
 
-**Note**: This is a backend API. You'll need a frontend application to interact with it, or use tools like Postman, cURL, or similar API clients for testing.
+## 📝 Notes
 
+> **Important:** This is a backend API. You'll need a frontend application to interact with it, or use tools like:
+> - [Postman](https://www.postman.com/)
+> - [Insomnia](https://insomnia.rest/)
+> - [cURL](https://curl.se/)
+> - [Thunder Client](https://www.thunderclient.com/) (VS Code extension)
+
+---
+
+**Happy Coding 🫡**
