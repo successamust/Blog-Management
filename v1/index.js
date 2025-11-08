@@ -9,6 +9,7 @@ import categoriesRoutes from './routes/categories.js';
 import imagesRoutes from './routes/images.js';
 import searchRoutes from './routes/search.js';
 import dashboardRoutes from './routes/dashboard.js';
+import authorsRoutes from './routes/authors.js';
 const router = express.Router();
 
 router.use('/auth', authRoutes);
@@ -21,4 +22,5 @@ router.use('/categories', categoriesRoutes);
 router.use('/images', imagesRoutes);
 router.use('/search', searchRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/authors', authorsRoutes);
 export default router;

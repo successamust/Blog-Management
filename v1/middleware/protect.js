@@ -52,3 +52,41 @@ export const requireAdmin = async (req, res, next) => {
       });
     }
   };
+
+  export const requireAuthor = async (req, res, next) => {
+    try {
+      const currentUser = await User.findById(req.user._id);
+      
+      if (!currentUser || !['author', 'admin'].includes(currentUser.role)) {
+        return res.status(403).json({
+          message: 'Author privileges required'
+        });
+      }
+  
+      next();
+    } catch (error) {
+      console.error('Author middleware error:', error);
+      res.status(500).json({
+        message: 'Server error during author verification'
+      });
+    }
+  };
+  
+  export const requireAuthorOrAdmin = async (req, res, next) => {
+    try {
+      const currentUser = await User.findById(req.user._id);
+      
+      if (!currentUser || !['author', 'admin'].includes(currentUser.role)) {
+        return res.status(403).json({
+          message: 'Author or admin privileges required'
+        });
+      }
+  
+      next();
+    } catch (error) {
+      console.error('Author or admin middleware error:', error);
+      res.status(500).json({
+        message: 'Server error during privilege verification'
+      });
+    }
+  };

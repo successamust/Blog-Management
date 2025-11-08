@@ -163,3 +163,52 @@ export const validatePasswordReset = (req, res, next) => {
 
   next();
 };
+
+// Author application validation
+export const validateAuthorApplication = (req, res, next) => {
+    const { message, bio, expertise, website } = req.body;
+    const errors = [];
+  
+    // Message validation
+    if (!message || message.trim().length === 0) {
+      errors.push('Application message is required');
+    } else if (message.length < 10) {
+      errors.push('Application message must be at least 10 characters long');
+    } else if (message.length > 1000) {
+      errors.push('Application message must be less than 1000 characters');
+    }
+  
+    // Bio validation (optional)
+    if (bio && bio.length > 500) {
+      errors.push('Bio must be less than 500 characters');
+    }
+  
+    // Expertise validation (optional)
+    if (expertise && !Array.isArray(expertise)) {
+      errors.push('Expertise must be an array of strings');
+    } else if (expertise && expertise.length > 10) {
+      errors.push('You can only select up to 10 areas of expertise');
+    } else if (expertise) {
+      expertise.forEach((exp, index) => {
+        if (typeof exp !== 'string') {
+          errors.push(`Expertise item at position ${index + 1} must be a string`);
+        } else if (exp.length > 50) {
+          errors.push(`Expertise item "${exp}" must be less than 50 characters`);
+        }
+      });
+    }
+  
+    // Website validation (optional)
+    if (website && !validator.isURL(website)) {
+      errors.push('Please provide a valid website URL');
+    }
+  
+    if (errors.length > 0) {
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors
+      });
+    }
+  
+    next();
+  };

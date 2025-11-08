@@ -25,14 +25,41 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
+    enum: ['user', 'admin', 'author'],
     default: 'user'
+  },
+  authorApplication: {
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected', 'none'],
+      default: 'none'
+    },
+    message: String, 
+    submittedAt: Date,
+    reviewedAt: Date,
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  },
+  authorProfile: {
+    bio: String,
+    expertise: [String],
+    website: String,
+    socialMedia: {
+      twitter: String,
+      linkedin: String,
+      github: String
+    }
+  },
+  isVerifiedAuthor: {
+    type: Boolean,
+    default: false
   },
   isActive: {
     type: Boolean,
     default: true
   },
-  
   resetPasswordToken: String,
   resetPasswordExpire: Date,
   lastPasswordChange: {
