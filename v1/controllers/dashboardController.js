@@ -10,8 +10,11 @@ export const getUserDashboard = async (req, res) => {
       userPosts,
       userComments,
       likedPosts,
-      totalPosts,
-      totalComments,
+      totalPostsCount,
+      publishedPostsCount,
+      draftPostsCount,
+      totalCommentsCount,
+      approvedCommentsCount,
       userStats
     ] = await Promise.all([
       Post.find({ 
@@ -49,8 +52,6 @@ export const getUserDashboard = async (req, res) => {
 
       getUserEngagementStats(userId)
     ]);
-
-    const [totalPostsCount, publishedPostsCount, draftPostsCount, totalCommentsCount, approvedCommentsCount] = totalPosts;
 
     const totalWords = userStats.totalWords || 0;
     const estimatedReadingTime = Math.ceil(totalWords / 200);
