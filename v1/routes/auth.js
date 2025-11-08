@@ -15,7 +15,7 @@ router.get('/allusers', [authenticate, requireAdmin], authController.getAllUsers
 router.get('/stats', [authenticate, requireAdmin], authController.getUserStats);
 router.get('/profile/:userId', authController.getUserProfile);
 
-router.put('update/:userId', authenticate, authController.updateUserProfile);
+router.put('/update/:userId', authenticate, authController.updateUserProfile);
 
 router.delete('/delete/:userId', authenticate, authController.deleteUser);
 
