@@ -62,7 +62,7 @@ cp .env.example .env  # Or create manually
 npm run dev
 
 # 5. Test the API
-curl http://localhost:3050/health
+curl https://blog-management-sx5c.onrender.com/health
 ```
 
 **Expected Response:**
@@ -166,7 +166,7 @@ MONGODB_URL=mongodb://localhost:27017/blog-management
 JWT_SECRET=your_super_secret_jwt_key_here
 
 # Base URL (for email links and password reset)
-BASE_URL=http://localhost:3050
+BASE_URL=https://blog-management-sx5c.onrender.com
 
 # Cloudinary Configuration
 CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
@@ -605,7 +605,7 @@ Blog Management with Newsletter/
 | `PORT` | Server port | `3050` |
 | `MONGODB_URL` | MongoDB connection string | `mongodb://localhost:27017/blog-management` |
 | `JWT_SECRET` | Secret for JWT signing | `your_secret_key` |
-| `BASE_URL` | Base URL for email links | `http://localhost:3050` |
+| `BASE_URL` | Base URL for email links | `https://blog-management-sx5c.onrender.com` |
 
 ### Optional Environment Variables
 
