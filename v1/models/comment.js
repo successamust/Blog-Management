@@ -17,7 +17,6 @@ const commentSchema = new mongoose.Schema({
     ref: 'Post',
     required: true
   },
-  // For nested replies (optional - can add later)
   parentComment: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Comment',
@@ -35,7 +34,6 @@ const commentSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for better performance
 commentSchema.index({ post: 1, createdAt: -1 });
 commentSchema.index({ author: 1 });
 

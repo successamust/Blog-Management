@@ -5,7 +5,6 @@ import { authenticate, requireAdmin } from '../middleware/protect.js';
 
 const router = express.Router();
 
-// User routes
 router.post('/apply', authenticate, validateAuthorApplication, authorController.applyForAuthor);
 
 

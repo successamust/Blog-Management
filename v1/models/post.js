@@ -60,7 +60,6 @@ const postSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  // Analytics
   engagementRate: {
     type: Number,
     default: 0

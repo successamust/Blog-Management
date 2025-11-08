@@ -1,7 +1,6 @@
 import User from '../models/user.js';
 import { validationResult } from 'express-validator';
 
-// Apply to become an author(tell us why you want to be an author)
 export const applyForAuthor = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -26,7 +25,6 @@ export const applyForAuthor = async (req, res) => {
       });
     }
 
-    // Update user with application
     user.authorApplication = {
       status: 'pending',
       message,
@@ -55,7 +53,6 @@ export const applyForAuthor = async (req, res) => {
   }
 };
 
-// Get author applications (Admin only)
 export const getAuthorApplications = async (req, res) => {
   try {
     const { status = 'pending' } = req.query;
@@ -78,11 +75,10 @@ export const getAuthorApplications = async (req, res) => {
   }
 };
 
-// Review author application (Admin only)
 export const reviewAuthorApplication = async (req, res) => {
   try {
     const { applicationId } = req.params;
-    const { action, adminNotes } = req.body; // 'approve' or 'reject'
+    const { action, adminNotes } = req.body;
     const adminId = req.user._id;
 
     const user = await User.findById(applicationId);
@@ -126,7 +122,6 @@ export const reviewAuthorApplication = async (req, res) => {
   }
 };
 
-// Promote user to author directly (Admin only)
 export const promoteToAuthor = async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);

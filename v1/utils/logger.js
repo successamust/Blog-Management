@@ -5,7 +5,6 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Define log format
 const logFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.errors({ stack: true }),
@@ -13,7 +12,6 @@ const logFormat = winston.format.combine(
   winston.format.json()
 );
 
-// Define console format for development
 const consoleFormat = winston.format.combine(
   winston.format.colorize(),
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
@@ -26,23 +24,20 @@ const consoleFormat = winston.format.combine(
   })
 );
 
-// Create logger instance
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: logFormat,
   defaultMeta: { service: 'blog-api' },
   transports: [
-    // Write all logs to `combined.log`
     new winston.transports.File({
       filename: path.join(__dirname, '../../logs/error.log'),
       level: 'error',
-      maxsize: 5242880, // 5MB
+      maxsize: 5242880,
       maxFiles: 5,
     }),
-    // Write all logs with level `info` and below to `combined.log`
     new winston.transports.File({
       filename: path.join(__dirname, '../../logs/combined.log'),
-      maxsize: 5242880, // 5MB
+      maxsize: 5242880,
       maxFiles: 5,
     }),
   ],
@@ -58,7 +53,6 @@ const logger = winston.createLogger({
   ],
 });
 
-// If we're not in production, log to the console as well
 if (process.env.NODE_ENV !== 'production') {
   logger.add(
     new winston.transports.Console({
@@ -67,7 +61,6 @@ if (process.env.NODE_ENV !== 'production') {
   );
 }
 
-// Create a stream object for Morgan HTTP logger
 logger.stream = {
   write: (message) => {
     logger.info(message.trim());

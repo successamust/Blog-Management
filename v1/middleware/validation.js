@@ -164,12 +164,10 @@ export const validatePasswordReset = (req, res, next) => {
   next();
 };
 
-// Author application validation
 export const validateAuthorApplication = (req, res, next) => {
     const { message, bio, expertise, website } = req.body;
     const errors = [];
   
-    // Message validation
     if (!message || message.trim().length === 0) {
       errors.push('Application message is required');
     } else if (message.length < 10) {
@@ -178,12 +176,10 @@ export const validateAuthorApplication = (req, res, next) => {
       errors.push('Application message must be less than 1000 characters');
     }
   
-    // Bio validation (optional)
     if (bio && bio.length > 500) {
       errors.push('Bio must be less than 500 characters');
     }
   
-    // Expertise validation (optional)
     if (expertise && !Array.isArray(expertise)) {
       errors.push('Expertise must be an array of strings');
     } else if (expertise && expertise.length > 10) {
@@ -198,7 +194,6 @@ export const validateAuthorApplication = (req, res, next) => {
       });
     }
   
-    // Website validation (optional)
     if (website && !validator.isURL(website)) {
       errors.push('Please provide a valid website URL');
     }

@@ -11,17 +11,17 @@ import swaggerSpec from './v1/config/swagger.js'
 const app = express()
 dotenv.config();
 
-// Connect to database
+// Trust proxy - required when behind a reverse proxy (e.g., Render, Heroku, etc.)
+app.set('trust proxy', true);
+
 connectDB()
   .then(() => logger.info('Database connected successfully'))
   .catch(err => logger.error('Database connection failed:', err));
 
-// Middleware
 app.use(cors({origin: "*"}))
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Request logging middleware
 app.use((req, res, next) => {
   req._startTime = Date.now();
   logger.info(`${req.method} ${req.originalUrl}`, {
@@ -38,16 +38,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// Apply rate limiting to all API routes
 app.use('/v1', apiLimiter);
 
-// Swagger API Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customCss: '.swagger-ui .topbar { display: none }',
   customSiteTitle: 'Blog API Documentation',
 }));
 
-// Health check endpoint
 app.get('/', (req, res) => {
   res.json({ 
     message: 'API is running!',
@@ -66,10 +63,8 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API routes
 app.use('/v1', router);
 
-// 404 handler
 app.use((req, res, next) => {
   logger.warn(`Route not found: ${req.method} ${req.originalUrl}`, {
     ip: req.ip,
@@ -82,7 +77,6 @@ app.use((req, res, next) => {
   });
 });
 
-// Error handler
 app.use((err, req, res, next) => {
   logger.error('Unhandled error:', {
     error: err.message,
@@ -105,7 +99,6 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3050;
 
-// Only start server if not in test environment
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
