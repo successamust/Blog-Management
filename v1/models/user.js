@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -26,6 +27,17 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['user', 'admin'],
     default: 'user'
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  
+  resetPasswordToken: String,
+  resetPasswordExpire: Date,
+  lastPasswordChange: {
+    type: Date,
+    default: Date.now
   }
 }, {
   timestamps: true
@@ -35,11 +47,34 @@ userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
   
   this.password = await bcrypt.hash(this.password, 12);
+  this.lastPasswordChange = Date.now();
   next();
 });
 
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
+};
+
+userSchema.methods.isAdmin = function() {
+  return this.role === 'admin';
+};
+
+userSchema.methods.generatePasswordResetToken = function() {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  
+  this.resetPasswordToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+  
+  this.resetPasswordExpire = Date.now() + 1 * 60 * 60 * 1000;
+  
+  return resetToken;
+};
+
+userSchema.methods.clearResetToken = function() {
+  this.resetPasswordToken = undefined;
+  this.resetPasswordExpire = undefined;
 };
 
 export default mongoose.model('User', userSchema);

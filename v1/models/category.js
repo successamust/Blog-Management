@@ -20,7 +20,7 @@ const categorySchema = new mongoose.Schema({
   },
   color: {
     type: String,
-    default: '#6B7280' // Default gray color
+    default: '#6B7280' 
   },
   postCount: {
     type: Number,

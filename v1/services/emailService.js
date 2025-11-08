@@ -48,10 +48,10 @@ export const sendNewsletter = async (subscribers, subject, content) => {
         };
 
         await sgMail.send(msg);
-        console.log(`✅ Email sent successfully to: ${subscriber.email}`);
+        console.log(`Email sent successfully to: ${subscriber.email}`);
         return { success: true, email: subscriber.email };
       } catch (error) {
-        console.error(`❌ Failed to send email to ${subscriber.email}:`, error.response?.body || error.message);
+        console.error(`Failed to send email to ${subscriber.email}:`, error.response?.body || error.message);
         return { success: false, email: subscriber.email, error: error.response?.body || error.message };
       }
     });
@@ -64,7 +64,7 @@ export const sendNewsletter = async (subscribers, subject, content) => {
     
     const failed = results.length - successful;
 
-    console.log(`📊 Newsletter Results: ${successful} successful, ${failed} failed`);
+    console.log(`Newsletter Results: ${successful} successful, ${failed} failed`);
 
     return { 
       successful, 
@@ -72,14 +72,14 @@ export const sendNewsletter = async (subscribers, subject, content) => {
       results: results.map(r => r.status === 'fulfilled' ? r.value : r.reason) 
     };
   } catch (error) {
-    console.error('❌ Error in sendNewsletter:', error);
+    console.error('Error in sendNewsletter:', error);
     throw new Error('Failed to send newsletter');
   }
 };
 
 export const sendWelcomeEmail = async (email) => {
   try {
-    console.log(`📧 Sending welcome email to: ${email}`);
+    console.log(`Sending welcome email to: ${email}`);
 
     const msg = {
       to: email,
@@ -125,17 +125,17 @@ export const sendWelcomeEmail = async (email) => {
     };
 
     await sgMail.send(msg);
-    console.log('✅ Welcome email sent successfully!');
+    console.log('Welcome email sent successfully!');
     return { success: true };
   } catch (error) {
-    console.error('❌ Failed to send welcome email:', error.response?.body || error.message);
+    console.error('Failed to send welcome email:', error.response?.body || error.message);
     throw new Error(`Failed to send welcome email: ${error.response?.body || error.message}`);
   }
 };
 
 export const sendNewPostNotification = async (subscribers, post) => {
   try {
-    console.log(`📧 Notifying ${subscribers.length} subscribers about new post: ${post.title}`);
+    console.log(`Notifying ${subscribers.length} subscribers about new post: ${post.title}`);
 
     const emailPromises = subscribers.map(async (subscriber) => {
       try {
@@ -186,10 +186,10 @@ export const sendNewPostNotification = async (subscribers, post) => {
         };
 
         await sgMail.send(msg);
-        console.log(`✅ New post notification sent to: ${subscriber.email}`);
+        console.log(`New post notification sent to: ${subscriber.email}`);
         return { success: true, email: subscriber.email };
       } catch (error) {
-        console.error(`❌ Failed to send new post notification to ${subscriber.email}:`, error.response?.body || error.message);
+        console.error(`Failed to send new post notification to ${subscriber.email}:`, error.response?.body || error.message);
         return { success: false, email: subscriber.email, error: error.response?.body || error.message };
       }
     });
@@ -202,18 +202,18 @@ export const sendNewPostNotification = async (subscribers, post) => {
     
     const failed = results.length - successful;
 
-    console.log(`📊 New Post Notification Results: ${successful} successful, ${failed} failed`);
+    console.log(`New Post Notification Results: ${successful} successful, ${failed} failed`);
 
     return { successful, failed, results };
   } catch (error) {
-    console.error('❌ Error in sendNewPostNotification:', error);
+    console.error('Error in sendNewPostNotification:', error);
     throw new Error('Failed to send new post notifications');
   }
 };
 
 export const sendUserWelcomeEmail = async (user) => {
     try {
-      console.log(`📧 Sending user welcome email to: ${user.email}`);
+      console.log(`Sending user welcome email to: ${user.email}`);
   
       const msg = {
         from: process.env.FROM_EMAIL,
@@ -331,12 +331,128 @@ export const sendUserWelcomeEmail = async (user) => {
       };
   
       await sgMail.send(msg);
-      console.log('✅ User welcome email sent successfully!');
+      console.log('User welcome email sent successfully!');
       return { success: true };
     } catch (error) {
-      console.error('❌ Failed to send user welcome email:', error.message);
+      console.error('Failed to send user welcome email:', error.message);
       throw new Error(`Failed to send user welcome email: ${error.message}`);
     }
   };
+
+
+
+export const sendPasswordResetEmail = async (email, resetToken) => {
+  try {
+    const resetUrl = `${process.env.BASE_URL}/v1/auth/reset-password?token=${resetToken}`;
+
+    const msg = {
+      from: process.env.FROM_EMAIL,
+      to: email,
+      subject: 'Password Reset Request - Your Blog',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .button { background: #EF4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 20px; padding: 20px; color: #666; font-size: 12px; border-top: 1px solid #ddd; }
+            .code { background: #f0f0f0; padding: 10px; border-radius: 5px; font-family: monospace; margin: 15px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Password Reset Request</h1>
+          </div>
+          <div class="content">
+            <h2>Hello!</h2>
+            <p>You requested to reset your password for your blog account.</p>
+            <p>Click the button below to reset your password. This link will expire in 1 hour.</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" class="button">Reset Your Password</a>
+            </div>
+
+            <p>Or copy and paste this URL in your browser:</p>
+            <div class="code">${resetUrl}</div>
+
+            <p>If you didn't request this reset, please ignore this email. Your password will remain unchanged.</p>
+            
+            <div class="footer">
+              <p>This is an automated message. Please do not reply to this email.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    };
+
+    await sgMail.send(msg);
+    console.log('Password reset email sent successfully to:', email);
+    return true;
+  } catch (error) {
+    console.error('Failed to send password reset email:', error);
+    throw error;
+  }
+};
+
+export const sendPasswordChangedEmail = async (email) => {
+  try {
+    const msg = {
+      from: process.env.FROM_EMAIL,
+      to: email,
+      subject: 'Password Changed Successfully - Your Blog',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .footer { text-align: center; margin-top: 20px; padding: 20px; color: #666; font-size: 12px; border-top: 1px solid #ddd; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Password Changed Successfully</h1>
+          </div>
+          <div class="content">
+            <h2>Security Notice</h2>
+            <p>Your password has been successfully changed.</p>
+            <p>If you made this change, no further action is needed.</p>
+            
+            <div style="background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <strong>📅 Change Time:</strong> ${new Date().toLocaleString()}<br>
+              <strong>🌐 Location:</strong> Your account
+            </div>
+
+            <p><strong>If you didn't make this change:</strong></p>
+            <ul>
+              <li>Reset your password immediately using the forgot password feature</li>
+              <li>Contact support if you need assistance</li>
+              <li>Check your account for any suspicious activity</li>
+            </ul>
+
+            <div class="footer">
+              <p>This is an automated security notification.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    };
+
+    await sgMail.send(msg);
+    console.log('Password changed notification sent to:', email);
+    return true;
+  } catch (error) {
+    console.error('Failed to send password changed email:', error);
+  }
+};
 
 export default sgMail;

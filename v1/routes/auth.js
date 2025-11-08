@@ -1,32 +1,29 @@
 import express from 'express';
-import { body } from 'express-validator';
 import * as authController from '../controllers/authController.js';
 import { authenticate, requireAdmin } from '../middleware/protect.js';
+import * as passwordController from '../controllers/passwordController.js';
+import { validateRegistration, validateLogin, validatePasswordReset } from '../middleware/validation.js';
 
 const router = express.Router();
 
-router.post('/register', [
-  body('username').isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
-  body('email').isEmail().withMessage('Please enter a valid email'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
-], authController.register);
+router.post('/register', validateRegistration, authController.register);
 
-router.post('/login', [
-  body('email').isEmail().withMessage('Please enter a valid email'),
-  body('password').exists().withMessage('Password is required')
-], authController.login);
+router.post('/login', validateLogin, authController.login);
 
 router.get('/me', authenticate, authController.getMe);
 router.get('/allusers', [authenticate, requireAdmin], authController.getAllUsers);
 router.get('/stats', [authenticate, requireAdmin], authController.getUserStats);
 router.get('/profile/:userId', authController.getUserProfile);
 
-router.put('update/:userId', [
-  authenticate,
-  body('username').optional().isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
-  body('email').optional().isEmail().withMessage('Please enter a valid email')
-], authController.updateUserProfile);
+router.put('update/:userId', authenticate, authController.updateUserProfile);
 
 router.delete('/delete/:userId', authenticate, authController.deleteUser);
 
+router.post('/forgot-password', validatePasswordReset, passwordController.forgotPassword);
+
+router.post('/reset-password', validatePasswordReset, passwordController.resetPassword);
+
+router.post('/change-password', authenticate, validatePasswordReset, passwordController.changePassword);
+
+router.get('/validate-reset-token', passwordController.validateResetToken);
 export default router;

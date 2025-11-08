@@ -41,9 +41,9 @@ export const register = async (req, res) => {
           email: user.email,
           role: user.role
         });
-        console.log('✅ User welcome email sent successfully');
+        console.log('User welcome email sent successfully');
       } catch (emailError) {
-        console.error('❌ Failed to send welcome email, but user was created:', emailError.message);
+        console.error('Failed to send welcome email, but user was created:', emailError.message);
       }
 
     res.status(201).json({

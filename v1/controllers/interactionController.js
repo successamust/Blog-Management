@@ -118,7 +118,7 @@ export const sharePost = async (req, res) => {
     res.json({
       message: 'Post shared successfully',
       shares: post.shares,
-      shareUrl: `${process.env.BASE_URL}/api/posts/${post.slug}`
+      shareUrl: `${process.env.BASE_URL}/v1/posts/${post.slug}`
     });
   } catch (error) {
     console.error('Share post error:', error);

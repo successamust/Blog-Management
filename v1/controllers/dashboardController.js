@@ -299,21 +299,21 @@ const getQuickActions = (userRole) => {
     {
       title: 'Browse Posts',
       description: 'Explore all published content',
-      path: '/api/posts',
+      path: '/v1/posts',
       method: 'GET',
       icon: '📚'
     },
     {
       title: 'Liked Posts',
       description: 'View posts you have liked',
-      path: '/api/dashboard/likes',
+      path: '/v1/dashboard/likes',
       method: 'GET',
       icon: '❤️'
     },
     {
       title: 'My Comments',
       description: 'Manage your comments',
-      path: '/api/dashboard/comments',
+      path: '/v1/dashboard/comments',
       method: 'GET',
       icon: '💬'
     }
@@ -324,21 +324,21 @@ const getQuickActions = (userRole) => {
       {
         title: 'Create Post',
         description: 'Write a new blog post',
-        path: '/api/posts',
+        path: '/v1/posts',
         method: 'POST',
         icon: '✍️'
       },
       {
         title: 'Manage Categories',
         description: 'Add or edit categories',
-        path: '/api/categories',
+        path: '/v1/categories',
         method: 'GET',
         icon: '📁'
       },
       {
         title: 'Upload Image',
         description: 'Add images for your posts',
-        path: '/api/images/upload',
+        path: '/v1/images/upload',
         method: 'POST',
         icon: '🖼️'
       }
