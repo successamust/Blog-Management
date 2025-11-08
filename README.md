@@ -833,15 +833,45 @@ The documentation includes:
 
 ### Testing
 
-See [TESTING.md](./TESTING.md) for detailed testing information.
+The project uses **Jest** as the testing framework and **Supertest** for HTTP assertions.
 
 ```bash
 # Run all tests
 npm test
 
+# Run tests in watch mode
+npm run test:watch
+
 # Run tests with coverage
 npm run test:coverage
 ```
+
+**Test Structure:**
+- Tests are located in the `__tests__/` directory
+- Example tests: `health.test.js`, `auth.test.js`
+- Coverage reports are generated in the `coverage/` directory
+
+**Writing Tests:**
+```javascript
+import request from 'supertest';
+import app from '../app.js';
+
+describe('Feature Name', () => {
+  describe('GET /endpoint', () => {
+    it('should return expected response', async () => {
+      const response = await request(app)
+        .get('/v1/endpoint')
+        .expect(200);
+      expect(response.body).toHaveProperty('expectedProperty');
+    });
+  });
+});
+```
+
+**Test Environment:**
+- Tests run with `NODE_ENV=test`
+- Use a separate test database if needed
+- Mock external services (email, cloudinary, etc.)
 
 ### Logging
 
