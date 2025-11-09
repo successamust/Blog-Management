@@ -38,7 +38,7 @@ export const sendNewsletter = async (subscribers, subject, content) => {
                 <div class="footer">
                   <p>You're receiving this email because you subscribed to our newsletter.</p>
                   <p class="unsubscribe">
-                    <a href="${process.env.BASE_URL}/v1/newsletter/unsubscribe?email=${subscriber.email}" style="color: #666;">Unsubscribe from our newsletter</a>
+                    <a href="${process.env.BASE_URL}/v1/newsletters/unsubscribe?email=${subscriber.email}" style="color: #666;">Unsubscribe from our newsletter</a>
                   </p>
                 </div>
               </div>
@@ -116,7 +116,7 @@ export const sendWelcomeEmail = async (email) => {
               <a href="${process.env.BASE_URL}/v1/posts" class="button">Explore Our Blog</a>
             </div>
             <div class="footer">
-              <p>If you change your mind, you can <a href="${process.env.BASE_URL}/v1/newsletter/unsubscribe?email=${email}">unsubscribe</a> at any time.</p>
+              <p>If you change your mind, you can <a href="${process.env.BASE_URL}/v1/newsletters/unsubscribe?email=${email}">unsubscribe</a> at any time.</p>
             </div>
           </div>
         </body>
@@ -176,7 +176,7 @@ export const sendNewPostNotification = async (subscribers, post) => {
                 <div class="footer">
                   <p>You're receiving this email because you subscribed to updates from our blog.</p>
                   <p>
-                    <a href="${process.env.BASE_URL}/v1/newsletter/unsubscribe?email=${subscriber.email}" style="color: #666;">Unsubscribe from notifications</a>
+                    <a href="${process.env.BASE_URL}/v1/newsletters/unsubscribe?email=${subscriber.email}" style="color: #666;">Unsubscribe from notifications</a>
                   </p>
                 </div>
               </div>
@@ -348,7 +348,7 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
     const msg = {
       from: process.env.FROM_EMAIL,
       to: email,
-      subject: 'Password Reset Request - Your Blog',
+      subject: 'Password Reset Request - The Nexus Blog',
       html: `
         <!DOCTYPE html>
         <html>
@@ -369,7 +369,7 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
           </div>
           <div class="content">
             <h2>Hello!</h2>
-            <p>You requested to reset your password for your blog account.</p>
+            <p>You requested to reset your password for your Nexus Blog account.</p>
             <p>Click the button below to reset your password. This link will expire in 1 hour.</p>
             
             <div style="text-align: center; margin: 30px 0;">
@@ -404,7 +404,7 @@ export const sendPasswordChangedEmail = async (email) => {
     const msg = {
       from: process.env.FROM_EMAIL,
       to: email,
-      subject: 'Password Changed Successfully - Your Blog',
+      subject: 'Password Changed Successfully - The Nexus Blog',
       html: `
         <!DOCTYPE html>
         <html>
