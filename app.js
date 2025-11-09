@@ -11,8 +11,12 @@ import swaggerSpec from './v1/config/swagger.js'
 const app = express()
 dotenv.config();
 
-// Trust proxy - required when behind a reverse proxy (e.g., Render, Heroku, etc.)
-app.set('trust proxy', true);
+
+if (process.env.NODE_ENV === 'production' || process.env.TRUST_PROXY === 'true') {
+  app.set('trust proxy', 1); 
+} else {
+  app.set('trust proxy', false); 
+}
 
 connectDB()
   .then(() => logger.info('Database connected successfully'))

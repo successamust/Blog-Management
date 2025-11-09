@@ -78,38 +78,57 @@ export const getAuthorApplications = async (req, res) => {
 export const reviewAuthorApplication = async (req, res) => {
   try {
     const { applicationId } = req.params;
-    const { action, adminNotes } = req.body;
+    const { status, feedback } = req.body;
     const adminId = req.user._id;
 
-    const user = await User.findById(applicationId);
-    
-    if (!user || user.authorApplication.status !== 'pending') {
-      return res.status(404).json({
-        message: 'Application not found or already reviewed'
+    if (!status || !['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({
+        message: 'Status must be either "approved" or "rejected"'
       });
     }
 
-    if (action === 'approve') {
-      user.role = 'author';
-      user.authorApplication.status = 'approved';
-      user.isVerifiedAuthor = true;
-    } else if (action === 'reject') {
-      user.authorApplication.status = 'rejected';
+    const user = await User.findById(applicationId);
+    
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found'
+      });
     }
 
+    if (user.authorApplication.status !== 'pending') {
+      return res.status(400).json({
+        message: 'Application has already been reviewed'
+      });
+    }
+
+    // Update application status
+    user.authorApplication.status = status;
     user.authorApplication.reviewedAt = new Date();
     user.authorApplication.reviewedBy = adminId;
-    user.authorApplication.adminNotes = adminNotes;
+    
+    // Store feedback in the message field if provided
+    if (feedback) {
+      user.authorApplication.message = user.authorApplication.message 
+        ? `${user.authorApplication.message}\n\nAdmin Feedback: ${feedback}`
+        : `Admin Feedback: ${feedback}`;
+    }
+
+    // If approved, promote user to author
+    if (status === 'approved') {
+      user.role = 'author';
+      user.isVerifiedAuthor = true;
+    }
 
     await user.save();
 
     // TODO: Send email notification to user
 
     res.json({
-      message: `Application ${action}ed successfully`,
+      message: `Application ${status} successfully`,
       user: {
         id: user._id,
         username: user.username,
+        email: user.email,
         role: user.role,
         authorApplication: user.authorApplication
       }
@@ -117,7 +136,8 @@ export const reviewAuthorApplication = async (req, res) => {
   } catch (error) {
     console.error('Review author application error:', error);
     res.status(500).json({
-      message: 'Failed to review author application'
+      message: 'Failed to review author application',
+      error: process.env.NODE_ENV === 'production' ? undefined : error.message
     });
   }
 };

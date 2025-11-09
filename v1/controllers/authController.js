@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
 import User from '../models/user.js';
+import Post from '../models/post.js';
 import { sendUserWelcomeEmail } from '../services/emailService.js';
 
 const generateToken = (userId) => {

@@ -36,9 +36,9 @@ export const authorize = (...roles) => {
 
 export const requireAdmin = async (req, res, next) => {
     try {
-      const currentUser = await User.findById(req.user._id);
-      
-      if (!currentUser || currentUser.role !== 'admin') {
+      // Check if user exists and is admin
+      // req.user is already populated by authenticate middleware
+      if (!req.user || req.user.role !== 'admin') {
         return res.status(403).json({
           message: 'Admin privileges required'
         });
@@ -55,9 +55,9 @@ export const requireAdmin = async (req, res, next) => {
 
   export const requireAuthor = async (req, res, next) => {
     try {
-      const currentUser = await User.findById(req.user._id);
-      
-      if (!currentUser || !['author', 'admin'].includes(currentUser.role)) {
+      // Check if user exists and is author or admin
+      // req.user is already populated by authenticate middleware
+      if (!req.user || !['author', 'admin'].includes(req.user.role)) {
         return res.status(403).json({
           message: 'Author privileges required'
         });
@@ -74,9 +74,9 @@ export const requireAdmin = async (req, res, next) => {
   
   export const requireAuthorOrAdmin = async (req, res, next) => {
     try {
-      const currentUser = await User.findById(req.user._id);
-      
-      if (!currentUser || !['author', 'admin'].includes(currentUser.role)) {
+      // Check if user exists and is author or admin
+      // req.user is already populated by authenticate middleware
+      if (!req.user || !['author', 'admin'].includes(req.user.role)) {
         return res.status(403).json({
           message: 'Author or admin privileges required'
         });

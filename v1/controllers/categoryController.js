@@ -2,6 +2,7 @@ import Category from '../models/category.js';
 import Post from '../models/post.js';
 import { validationResult } from 'express-validator';
 
+
 export const getCategories = async (req, res) => {
   try {
     const categories = await Category.find({ isActive: true })

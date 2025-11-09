@@ -131,7 +131,8 @@ export const deletePost = async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    if (!req.user.isAdmin()) {
+    // Check if user is admin (the requireAdmin middleware already ensures this, but double-check)
+    if (req.user.role !== 'admin') {
       return res.status(403).json({ 
         message: 'Admin privileges required to delete posts' 
       });

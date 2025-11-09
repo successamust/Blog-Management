@@ -1,4 +1,5 @@
 import Post from '../models/post.js';
+import User from '../models/user.js';
 
 export const likePost = async (req, res) => {
   try {
@@ -20,6 +21,10 @@ export const likePost = async (req, res) => {
       post.likes.pull(userId);
       await post.save();
       
+      await User.findByIdAndUpdate(userId, {
+        $pull: { likedPosts: req.params.postId }
+      });
+      
       return res.json({ 
         message: 'Post unliked successfully',
         liked: false,
@@ -34,6 +39,10 @@ export const likePost = async (req, res) => {
 
     post.likes.push(userId);
     await post.save();
+    
+    await User.findByIdAndUpdate(userId, {
+      $addToSet: { likedPosts: req.params.postId }
+    });
 
     res.json({
       message: 'Post liked successfully',
@@ -80,6 +89,10 @@ export const dislikePost = async (req, res) => {
 
     if (hasLiked) {
       post.likes.pull(userId);
+      
+      await User.findByIdAndUpdate(userId, {
+        $pull: { likedPosts: req.params.postId }
+      });
     }
 
     post.dislikes.push(userId);

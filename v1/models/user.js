@@ -65,7 +65,11 @@ const userSchema = new mongoose.Schema({
   lastPasswordChange: {
     type: Date,
     default: Date.now
-  }
+  },
+  likedPosts: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Post'
+  }]
 }, {
   timestamps: true
 });
