@@ -10,6 +10,7 @@ router.get('/', dashboardController.getUserDashboard);
 router.get('/posts', dashboardController.getUserPosts);
 router.get('/comments', dashboardController.getUserComments);
 router.get('/likes', dashboardController.getUserLikedPosts);
+router.get('/bookmarks', dashboardController.getUserBookmarkedPosts);
 router.get('/history', dashboardController.getReadingHistory);
 
 export default router;

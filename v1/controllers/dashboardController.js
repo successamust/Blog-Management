@@ -6,10 +6,13 @@ export const getUserDashboard = async (req, res) => {
   try {
     const userId = req.user._id;
 
+    const user = await User.findById(userId).select('bookmarkedPosts');
+    
     const [
       userPosts,
       userComments,
       likedPosts,
+      bookmarkedPosts,
       totalPostsCount,
       publishedPostsCount,
       draftPostsCount,
@@ -40,6 +43,15 @@ export const getUserDashboard = async (req, res) => {
       })
         .populate('author', 'username')
         .select('title slug excerpt author likes publishedAt')
+        .sort({ publishedAt: -1 })
+        .limit(5),
+
+      Post.find({
+        _id: { $in: user.bookmarkedPosts },
+        isPublished: true
+      })
+        .populate('author', 'username')
+        .select('title slug excerpt author publishedAt')
         .sort({ publishedAt: -1 })
         .limit(5),
 
@@ -85,7 +97,8 @@ export const getUserDashboard = async (req, res) => {
       recentActivity: {
         posts: userPosts,
         comments: userComments,
-        likedPosts: likedPosts
+        likedPosts: likedPosts,
+        bookmarkedPosts: bookmarkedPosts
       },
       quickActions: getQuickActions(req.user.role)
     });
@@ -227,6 +240,50 @@ export const getUserLikedPosts = async (req, res) => {
   }
 };
 
+export const getUserBookmarkedPosts = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const user = await User.findById(userId).select('bookmarkedPosts');
+    
+    const [posts, total] = await Promise.all([
+      Post.find({
+        _id: { $in: user.bookmarkedPosts },
+        isPublished: true
+      })
+        .populate('author', 'username')
+        .populate('category', 'name slug color')
+        .select('title slug excerpt featuredImage likes dislikes viewCount publishedAt')
+        .sort({ publishedAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Post.countDocuments({
+        _id: { $in: user.bookmarkedPosts },
+        isPublished: true
+      })
+    ]);
+
+    res.json({
+      posts,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalBookmarkedPosts: total,
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1
+      }
+    });
+  } catch (error) {
+    console.error('Get user bookmarked posts error:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch bookmarked posts'
+    });
+  }
+};
+
 export const getReadingHistory = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -310,6 +367,13 @@ const getQuickActions = (userRole) => {
       path: '/v1/dashboard/likes',
       method: 'GET',
       icon: '❤️'
+    },
+    {
+      title: 'Bookmarked Posts',
+      description: 'View posts you have bookmarked',
+      path: '/v1/dashboard/bookmarks',
+      method: 'GET',
+      icon: '🔖'
     },
     {
       title: 'My Comments',

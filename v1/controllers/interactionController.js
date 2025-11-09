@@ -218,3 +218,91 @@ export const getUserLikedPosts = async (req, res) => {
     });
   }
 };
+
+export const bookmarkPost = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.postId);
+    
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    if (!post.isPublished) {
+      return res.status(400).json({ message: 'Cannot bookmark an unpublished post' });
+    }
+
+    const userId = req.user._id;
+    const user = await User.findById(userId);
+    const hasBookmarked = user.bookmarkedPosts.some(
+      bookmarkedId => bookmarkedId.toString() === req.params.postId
+    );
+
+    if (hasBookmarked) {
+      await User.findByIdAndUpdate(userId, {
+        $pull: { bookmarkedPosts: req.params.postId }
+      });
+      
+      return res.json({ 
+        message: 'Post unbookmarked successfully',
+        bookmarked: false
+      });
+    }
+
+    await User.findByIdAndUpdate(userId, {
+      $addToSet: { bookmarkedPosts: req.params.postId }
+    });
+
+    res.json({
+      message: 'Post bookmarked successfully',
+      bookmarked: true
+    });
+  } catch (error) {
+    console.error('Bookmark post error:', error);
+    res.status(500).json({ 
+      message: 'Failed to bookmark post',
+      error: process.env.NODE_ENV === 'production' ? undefined : error.message 
+    });
+  }
+};
+
+export const getUserBookmarkedPosts = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const user = await User.findById(req.user._id).select('bookmarkedPosts');
+    
+    const posts = await Post.find({
+      _id: { $in: user.bookmarkedPosts },
+      isPublished: true
+    })
+      .populate('author', 'username')
+      .select('title slug excerpt featuredImage likes dislikes shares createdAt publishedAt')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Post.countDocuments({
+      _id: { $in: user.bookmarkedPosts },
+      isPublished: true
+    });
+
+    res.json({
+      posts,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalPosts: total,
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1
+      }
+    });
+  } catch (error) {
+    console.error('Get user bookmarked posts error:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch bookmarked posts',
+      error: process.env.NODE_ENV === 'production' ? undefined : error.message 
+    });
+  }
+};

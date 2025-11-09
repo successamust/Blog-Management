@@ -308,8 +308,10 @@ http://localhost:3050/v1
 | `POST` | `/:postId/like` | Like post | ✅ |
 | `POST` | `/:postId/dislike` | Dislike post | ✅ |
 | `POST` | `/:postId/share` | Share post | ❌ |
+| `POST` | `/:postId/bookmark` | Bookmark post | ✅ |
 | `GET` | `/:postId/interactions` | Get interactions | ❌ |
 | `GET` | `/me/likes` | Get user's liked posts | ✅ |
+| `GET` | `/me/bookmarks` | Get user's bookmarked posts | ✅ |
 
 ---
 
@@ -344,6 +346,7 @@ http://localhost:3050/v1
 | `GET` | `/posts` | User's posts | ✅ |
 | `GET` | `/comments` | User's comments | ✅ |
 | `GET` | `/likes` | User's liked posts | ✅ |
+| `GET` | `/bookmarks` | User's bookmarked posts | ✅ |
 | `GET` | `/history` | Reading history | ✅ |
 
 ---

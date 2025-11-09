@@ -69,6 +69,10 @@ const userSchema = new mongoose.Schema({
   likedPosts: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Post'
+  }],
+  bookmarkedPosts: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Post'
   }]
 }, {
   timestamps: true
