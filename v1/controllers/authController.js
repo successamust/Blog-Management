@@ -102,12 +102,16 @@ export const login = async (req, res) => {
 
 export const getMe = async (req, res) => {
   try {
+    const user = await User.findById(req.user._id).select('username email role bookmarkedPosts likedPosts');
     res.json({
       user: {
-        id: req.user._id,
-        username: req.user.username,
-        email: req.user.email,
-        role: req.user.role
+        id: user._id,
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        bookmarkedPosts: user.bookmarkedPosts || [],
+        likedPosts: user.likedPosts || []
       }
     });
   } catch (error) {
