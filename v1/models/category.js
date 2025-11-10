@@ -34,9 +34,7 @@ const categorySchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Generate slug before validation runs
 categorySchema.pre('validate', function(next) {
-  // Generate slug if name is modified or if slug doesn't exist
   if (this.isModified('name') || !this.slug) {
     if (this.name) {
       this.slug = this.name
@@ -49,7 +47,6 @@ categorySchema.pre('validate', function(next) {
   next();
 });
 
-// Also update slug when name changes in pre-save
 categorySchema.pre('save', function(next) {
   if (this.isModified('name') && this.name) {
     this.slug = this.name

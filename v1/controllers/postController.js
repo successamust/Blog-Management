@@ -10,7 +10,7 @@ export const getPosts = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const posts = await Post.find({ isPublished: true })
-      .populate('author', 'username')
+      .populate('author', 'username profilePicture')
       .sort({ publishedAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -34,7 +34,7 @@ export const getPostBySlug = async (req, res) => {
     const post = await Post.findOne({ 
       slug: req.params.slug, 
       isPublished: true 
-    }).populate('author', 'username');
+    }).populate('author', 'username profilePicture');
 
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
@@ -72,7 +72,7 @@ export const createPost = async (req, res) => {
     });
 
     await post.save();
-    await post.populate('author', 'username');
+    await post.populate('author', 'username profilePicture');
 
     res.status(201).json(post);
   } catch (error) {
@@ -111,7 +111,7 @@ export const updatePost = async (req, res) => {
     }
 
     await post.save();
-    await post.populate('author', 'username');
+    await post.populate('author', 'username profilePicture');
     await post.populate('category', 'name slug color');
 
     res.json({
@@ -131,7 +131,6 @@ export const deletePost = async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    // Check if user is admin (the requireAdmin middleware already ensures this, but double-check)
     if (req.user.role !== 'admin') {
       return res.status(403).json({ 
         message: 'Admin privileges required to delete posts' 
@@ -189,7 +188,7 @@ export const getRelatedPosts = async (req, res) => {
         { category: post.category }
       ]
     })
-      .populate('author', 'username')
+      .populate('author', 'username profilePicture')
       .populate('category', 'name slug color')
       .select('title slug excerpt featuredImage likes viewCount publishedAt')
       .sort({ engagementRate: -1, publishedAt: -1 })

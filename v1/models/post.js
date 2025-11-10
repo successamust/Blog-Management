@@ -69,9 +69,7 @@ const postSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Generate slug before validation runs
 postSchema.pre('validate', function(next) {
-  // Generate slug if title is modified or if slug doesn't exist
   if (this.isModified('title') || !this.slug) {
     if (this.title) {
       this.slug = this.title
@@ -84,7 +82,6 @@ postSchema.pre('validate', function(next) {
   next();
 });
 
-// Also update slug when title changes in pre-save
 postSchema.pre('save', function(next) {
   if (this.isModified('title') && this.title) {
     this.slug = this.title

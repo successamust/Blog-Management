@@ -101,27 +101,23 @@ export const reviewAuthorApplication = async (req, res) => {
       });
     }
 
-    // Update application status
     user.authorApplication.status = status;
     user.authorApplication.reviewedAt = new Date();
     user.authorApplication.reviewedBy = adminId;
     
-    // Store feedback in the message field if provided
+    
     if (feedback) {
       user.authorApplication.message = user.authorApplication.message 
         ? `${user.authorApplication.message}\n\nAdmin Feedback: ${feedback}`
         : `Admin Feedback: ${feedback}`;
     }
 
-    // If approved, promote user to author
     if (status === 'approved') {
       user.role = 'author';
       user.isVerifiedAuthor = true;
     }
 
     await user.save();
-
-    // TODO: Send email notification to user
 
     res.json({
       message: `Application ${status} successfully`,

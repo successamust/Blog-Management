@@ -59,7 +59,7 @@ export const searchPosts = async (req, res) => {
     }
 
     let findOperation = Post.find(query)
-      .populate('author', 'username')
+      .populate('author', 'username profilePicture')
       .populate('category', 'name slug color')
       .select('title slug excerpt featuredImage likes dislikes shares viewCount engagementRate publishedAt createdAt')
       .skip(skip)

@@ -7,10 +7,11 @@ import { uploadLimiter } from '../middleware/rateLimiter.js';
 const router = express.Router();
 
 router.use(authenticate);
-router.use(requireAuthorOrAdmin);
 
 router.post('/upload', uploadLimiter, uploadMiddleware, imageController.uploadImage);
+
 router.get('/', imageController.getImageInfo);
+
 router.delete('/delete', imageController.deleteImageFromCloudinary);
 
 export default router;

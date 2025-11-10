@@ -64,7 +64,7 @@ export const getPostsByCategory = async (req, res) => {
       category: category._id,
       isPublished: true
     })
-      .populate('author', 'username')
+      .populate('author', 'username profilePicture')
       .populate('category', 'name slug color')
       .select('title slug excerpt featuredImage likes dislikes shares viewCount createdAt')
       .sort({ publishedAt: -1 })

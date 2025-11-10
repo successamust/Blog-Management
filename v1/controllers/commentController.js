@@ -26,7 +26,7 @@ export const createComment = async (req, res) => {
     });
 
     await comment.save();
-    await comment.populate('author', 'username');
+    await comment.populate('author', 'username profilePicture');
 
     res.status(201).json({
       message: 'Comment added successfully',
@@ -64,7 +64,7 @@ export const updateComment = async (req, res) => {
 
     comment.content = content;
     await comment.save();
-    await comment.populate('author', 'username');
+    await comment.populate('author', 'username profilePicture');
 
     res.json({
       message: 'Comment updated successfully',
@@ -159,7 +159,7 @@ export const getPostComments = async (req, res) => {
         post: req.params.postId,
         isApproved: true 
       })
-        .populate('author', 'username')
+        .populate('author', 'username profilePicture')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);

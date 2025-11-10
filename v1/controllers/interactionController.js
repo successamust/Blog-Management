@@ -189,7 +189,7 @@ export const getUserLikedPosts = async (req, res) => {
       likes: req.user._id,
       isPublished: true
     })
-      .populate('author', 'username')
+      .populate('author', 'username profilePicture')
       .select('title slug excerpt featuredImage likes dislikes shares createdAt')
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -277,7 +277,7 @@ export const getUserBookmarkedPosts = async (req, res) => {
       _id: { $in: user.bookmarkedPosts },
       isPublished: true
     })
-      .populate('author', 'username')
+      .populate('author', 'username profilePicture')
       .select('title slug excerpt featuredImage likes dislikes shares createdAt publishedAt')
       .sort({ createdAt: -1 })
       .skip(skip)

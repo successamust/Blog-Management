@@ -12,15 +12,24 @@ cloudinary.config({
 export const uploadToCloudinary = async (fileBuffer, folder = 'blog') => {
   try {
     return new Promise((resolve, reject) => {
+      const isProfilePicture = folder === 'blog-profile-pictures';
+      const transformation = isProfilePicture
+        ? [
+            { width: 400, height: 400, crop: 'fill', gravity: 'face' },
+            { quality: 'auto' },
+            { format: 'webp' }
+          ]
+        : [
+            { width: 1200, height: 630, crop: 'limit' },
+            { quality: 'auto' },
+            { format: 'webp' }
+          ];
+
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder: folder,
           resource_type: 'image',
-          transformation: [
-            { width: 1200, height: 630, crop: 'limit' },
-            { quality: 'auto' },
-            { format: 'webp' }
-          ]
+          transformation: transformation
         },
         (error, result) => {
           if (error) reject(error);

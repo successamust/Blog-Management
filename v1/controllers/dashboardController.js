@@ -41,7 +41,7 @@ export const getUserDashboard = async (req, res) => {
         likes: userId,
         isPublished: true 
       })
-        .populate('author', 'username')
+        .populate('author', 'username profilePicture')
         .select('title slug excerpt author likes publishedAt')
         .sort({ publishedAt: -1 })
         .limit(5),
@@ -50,7 +50,7 @@ export const getUserDashboard = async (req, res) => {
         _id: { $in: user.bookmarkedPosts },
         isPublished: true
       })
-        .populate('author', 'username')
+        .populate('author', 'username profilePicture')
         .select('title slug excerpt author publishedAt')
         .sort({ publishedAt: -1 })
         .limit(5),
@@ -210,7 +210,7 @@ export const getUserLikedPosts = async (req, res) => {
         likes: userId,
         isPublished: true 
       })
-        .populate('author', 'username')
+        .populate('author', 'username profilePicture')
         .populate('category', 'name slug color')
         .select('title slug excerpt featuredImage likes dislikes viewCount publishedAt')
         .sort({ publishedAt: -1 })
@@ -254,7 +254,7 @@ export const getUserBookmarkedPosts = async (req, res) => {
         _id: { $in: user.bookmarkedPosts },
         isPublished: true
       })
-        .populate('author', 'username')
+        .populate('author', 'username profilePicture')
         .populate('category', 'name slug color')
         .select('title slug excerpt featuredImage likes dislikes viewCount publishedAt')
         .sort({ publishedAt: -1 })
@@ -292,7 +292,7 @@ export const getReadingHistory = async (req, res) => {
 
     const [posts, total] = await Promise.all([
       Post.find({ isPublished: true })
-        .populate('author', 'username')
+        .populate('author', 'username profilePicture')
         .populate('category', 'name slug color')
         .select('title slug excerpt featuredImage viewCount publishedAt')
         .sort({ publishedAt: -1 })

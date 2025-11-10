@@ -54,7 +54,9 @@ export const register = async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
-        role: user.role
+        role: user.role,
+        profilePicture: user.profilePicture || '',
+        bio: user.bio || ''
       }
     });
   } catch (error) {
@@ -91,7 +93,9 @@ export const login = async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
-        role: user.role
+        role: user.role,
+        profilePicture: user.profilePicture || '',
+        bio: user.bio || ''
       }
     });
   } catch (error) {
@@ -102,7 +106,7 @@ export const login = async (req, res) => {
 
 export const getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('username email role bookmarkedPosts likedPosts createdAt');
+    const user = await User.findById(req.user._id).select('username email role profilePicture bio bookmarkedPosts likedPosts createdAt');
     res.json({
       user: {
         id: user._id,
@@ -110,6 +114,8 @@ export const getMe = async (req, res) => {
         username: user.username,
         email: user.email,
         role: user.role,
+        profilePicture: user.profilePicture || '',
+        bio: user.bio || '',
         bookmarkedPosts: user.bookmarkedPosts || [],
         likedPosts: user.likedPosts || [],
         createdAt: user.createdAt
@@ -135,8 +141,14 @@ export const getAllUsers = async (req, res) => {
 
     const total = await User.countDocuments();
 
+    const usersWithProfile = users.map(user => ({
+      ...user.toObject(),
+      profilePicture: user.profilePicture || '',
+      bio: user.bio || ''
+    }));
+
     res.json({
-      users,
+      users: usersWithProfile,
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
@@ -176,8 +188,14 @@ export const getUserProfile = async (req, res) => {
       totalShares: userPosts.reduce((sum, post) => sum + (post.shares || 0), 0)
     };
 
+    const userResponse = {
+      ...user.toObject(),
+      profilePicture: user.profilePicture || '',
+      bio: user.bio || ''
+    };
+
     res.json({
-      user,
+      user: userResponse,
       statistics: postStats
     });
   } catch (error) {
@@ -196,7 +214,7 @@ export const updateUserProfile = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { username, email } = req.body;
+    const { username, email, bio, profilePicture } = req.body;
     const userId = req.params.userId;
 
     if (req.user._id.toString() !== userId && req.user.role !== 'admin') {
@@ -205,22 +223,33 @@ export const updateUserProfile = async (req, res) => {
       });
     }
 
-    const existingUser = await User.findOne({
-      $and: [
-        { _id: { $ne: userId } },
-        { $or: [{ email }, { username }] }
-      ]
-    });
+    const updateFields = {};
+    if (username !== undefined) updateFields.username = username;
+    if (email !== undefined) updateFields.email = email;
+    if (bio !== undefined) updateFields.bio = bio;
+    if (profilePicture !== undefined) updateFields.profilePicture = profilePicture;
 
-    if (existingUser) {
-      return res.status(400).json({ 
-        message: 'Username or email already exists' 
+    if (username || email) {
+      const existingUser = await User.findOne({
+        $and: [
+          { _id: { $ne: userId } },
+          { $or: [
+            ...(email ? [{ email }] : []),
+            ...(username ? [{ username }] : [])
+          ]}
+        ]
       });
+
+      if (existingUser) {
+        return res.status(400).json({ 
+          message: 'Username or email already exists' 
+        });
+      }
     }
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { username, email },
+      updateFields,
       { new: true, runValidators: true }
     ).select('-password -__v');
 

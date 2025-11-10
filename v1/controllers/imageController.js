@@ -1,5 +1,6 @@
 import { processImageUpload, deleteImage } from '../utils/imageUpload.js';
 import Post from '../models/post.js';
+import User from '../models/user.js';
 
 export const uploadImage = async (req, res) => {
   try {
@@ -9,11 +10,14 @@ export const uploadImage = async (req, res) => {
       });
     }
 
-    const imageData = await processImageUpload(req.file);
+    const folder = req.query.type === 'profile' ? 'blog-profile-pictures' : 'blog';
+    const imageData = await processImageUpload(req.file, folder);
 
     res.json({
       message: 'Image uploaded successfully',
-      image: imageData
+      image: imageData,
+      url: imageData.url,
+      imageUrl: imageData.url
     });
   } catch (error) {
     console.error('Upload image error:', error);
@@ -40,6 +44,16 @@ export const deleteImageFromCloudinary = async (req, res) => {
     if (postsUsingImage) {
       return res.status(400).json({
         message: 'Cannot delete image. It is currently used in a blog post.'
+      });
+    }
+
+    const usersUsingImage = await User.findOne({ 
+      profilePicture: imageUrl 
+    });
+
+    if (usersUsingImage) {
+      return res.status(400).json({
+        message: 'Cannot delete image. It is currently used as a profile picture.'
       });
     }
 

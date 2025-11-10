@@ -18,20 +18,20 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 2 * 1024 * 1024, // 2MB limit
+    fileSize: 5 * 1024 * 1024,
   },
   fileFilter: fileFilter
 });
 
 export const uploadImage = upload.single('image');
 
-export const processImageUpload = async (file) => {
+export const processImageUpload = async (file, folder = 'blog') => {
   if (!file) {
     throw new Error('No file provided');
   }
 
   try {
-    const result = await uploadToCloudinary(file.buffer);
+    const result = await uploadToCloudinary(file.buffer, folder);
     
     return {
       url: result.secure_url,
