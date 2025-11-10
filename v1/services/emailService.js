@@ -116,7 +116,7 @@ export const sendWelcomeEmail = async (email) => {
               <a href="${process.env.FRONTEND_URL}/posts" class="button">Explore Our Blog</a>
             </div>
             <div class="footer">
-              <p>If you change your mind, you can <a href="${process.env.FRONTEND_URL}/unsubscribe?email=${subscriber.email}">unsubscribe</a> at any time.</p>
+              <p>If you change your mind, you can <a href="${process.env.FRONTEND_URL}/unsubscribe?email=${email}">unsubscribe</a> at any time.</p>
             </div>
           </div>
         </body>
