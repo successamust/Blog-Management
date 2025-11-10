@@ -71,7 +71,7 @@ export const unsubscribe = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email } = req.body;
+    const { email } = req.query;
 
     const subscriber = await Subscriber.findOne({ email });
     if (!subscriber) {
