@@ -1,6 +1,6 @@
 import express from 'express';
 import * as postController from '../controllers/postController.js';
-import { authenticate, requireAdmin, requireAuthor, requireAuthorOrAdmin } from '../middleware/protect.js';
+import { authenticate, requireAdmin, requireAuthor, requireAuthorOrAdmin, optionalAuthenticate } from '../middleware/protect.js';
 import { validatePost } from '../middleware/validation.js';
 
 const router = express.Router();
@@ -12,7 +12,8 @@ router.put('/update/:id', authenticate, validatePost, postController.updatePost)
 router.delete('/delete/:id', authenticate, requireAdmin, postController.deletePost);
 
 router.get('/', postController.getPosts);
-router.get('/:slug', postController.getPostBySlug);
+// Optional authentication for viewing draft posts - allows authors/admins to view their own drafts
+router.get('/:slug', optionalAuthenticate, postController.getPostBySlug);
 router.get('/:postId/related', postController.getRelatedPosts);
 
 export default router;

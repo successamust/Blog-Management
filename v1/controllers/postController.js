@@ -31,17 +31,38 @@ export const getPosts = async (req, res) => {
 
 export const getPostBySlug = async (req, res) => {
   try {
-    const post = await Post.findOne({ 
+    // First try to find published post (public access)
+    let post = await Post.findOne({ 
       slug: req.params.slug, 
       isPublished: true 
     }).populate('author', 'username profilePicture');
+
+    // If not found and user is authenticated, check for draft posts
+    if (!post && req.user) {
+      post = await Post.findOne({ 
+        slug: req.params.slug 
+      }).populate('author', 'username profilePicture');
+
+      // If found but unpublished, check if user has permission to view it
+      if (post && !post.isPublished) {
+        const isAuthor = post.author._id.toString() === req.user._id.toString();
+        const isAdmin = req.user.role === 'admin';
+        
+        if (!isAuthor && !isAdmin) {
+          return res.status(404).json({ message: 'Post not found' });
+        }
+      }
+    }
 
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    post.viewCount += 1;
-    await post.save();
+    // Only increment viewCount for published posts
+    if (post.isPublished) {
+      post.viewCount += 1;
+      await post.save();
+    }
 
     res.json(post);
   } catch (error) {

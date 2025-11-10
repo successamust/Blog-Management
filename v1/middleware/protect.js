@@ -23,6 +23,33 @@ export const authenticate = async (req, res, next) => {
   }
 };
 
+// Optional authentication - doesn't fail if no token, but sets req.user if token is valid
+export const optionalAuthenticate = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
+      return next(); // No token, continue without authentication
+    }
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+      const user = await User.findById(decoded.userId).select('-password');
+      
+      if (user) {
+        req.user = user;
+      }
+    } catch (error) {
+      // Invalid token, but continue without authentication
+      // Don't set req.user
+    }
+    
+    next();
+  } catch (error) {
+    next(); // Continue even if there's an error
+  }
+};
+
 export const authorize = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
