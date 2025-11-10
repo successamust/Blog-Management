@@ -14,13 +14,9 @@ router.post('/subscribe', [
     .normalizeEmail()
 ], newsletterController.subscribe);
 
-router.get('/unsubscribe', [
+router.get('/unsubscribe',
   newsletterLimiter,
-  body('email')
-    .isEmail()
-    .withMessage('Please enter a valid email address')
-    .normalizeEmail()
-], newsletterController.unsubscribe);
+  newsletterController.unsubscribe);
 
 router.post('/send', [
   authenticate,
