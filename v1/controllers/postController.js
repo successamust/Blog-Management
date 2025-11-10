@@ -8,14 +8,73 @@ export const getPosts = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+    const includeDrafts = req.query.includeDrafts === 'true' || req.query.includeDrafts === true;
+    const status = req.query.status;
 
-    const posts = await Post.find({ isPublished: true })
+    // Build query based on user role and parameters
+    let query = {};
+
+    // If user is authenticated and wants to include drafts
+    if (includeDrafts && req.user) {
+      if (req.user.role === 'admin') {
+        // Admins can see all posts (published and drafts)
+        // No filter needed - show all
+        query = {};
+      } else if (req.user.role === 'author') {
+        // Authors can see all published posts AND their own draft posts
+        query = {
+          $or: [
+            { isPublished: true }, // All published posts (from any author)
+            { 
+              isPublished: false,
+              author: req.user._id // Their own drafts only
+            }
+          ]
+        };
+      } else {
+        // Regular users can only see published posts
+        query = { isPublished: true };
+      }
+    } else {
+      // Default: only published posts for public access
+      query = { isPublished: true };
+    }
+
+    // Handle status filter if provided
+    if (status && status !== 'all') {
+      if (status === 'published') {
+        // Filter to only published posts
+        if (query.$or) {
+          // If we have an $or query, replace it with just published posts
+          query = { isPublished: true };
+        } else {
+          query.isPublished = true;
+        }
+      } else if (status === 'draft') {
+        // Filter to only draft posts
+        if (req.user && req.user.role === 'author') {
+          // Authors can only see their own drafts
+          query = {
+            isPublished: false,
+            author: req.user._id
+          };
+        } else if (req.user && req.user.role === 'admin') {
+          // Admins can see all drafts
+          query = { isPublished: false };
+        } else {
+          // Regular users can't see drafts
+          query = { _id: null }; // Return empty result
+        }
+      }
+    }
+
+    const posts = await Post.find(query)
       .populate('author', 'username profilePicture')
-      .sort({ publishedAt: -1 })
+      .sort({ publishedAt: -1, createdAt: -1 }) // Sort by publishedAt for published, createdAt for drafts
       .skip(skip)
       .limit(limit);
 
-    const total = await Post.countDocuments({ isPublished: true });
+    const total = await Post.countDocuments(query);
 
     res.json({
       posts,
