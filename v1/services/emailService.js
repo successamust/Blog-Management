@@ -38,7 +38,7 @@ export const sendNewsletter = async (subscribers, subject, content) => {
                 <div class="footer">
                   <p>You're receiving this email because you subscribed to our newsletter.</p>
                   <p class="unsubscribe">
-                    <a href="${process.env.BASE_URL}/v1/newsletters/unsubscribe?email=${subscriber.email}" style="color: #666;">Unsubscribe from our newsletter</a>
+                    <a href="${process.env.FRONTEND_URL}/unsubscribe?email=${subscriber.email}" style="color: #666;">Unsubscribe from our newsletter</a>
                   </p>
                 </div>
               </div>
@@ -113,10 +113,10 @@ export const sendWelcomeEmail = async (email) => {
             </ul>
             <p>Stay tuned for our next update - we promise to only send you valuable content!</p>
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.BASE_URL}/v1/posts" class="button">Explore Our Blog</a>
+              <a href="${process.env.FRONTEND_URL}/posts" class="button">Explore Our Blog</a>
             </div>
             <div class="footer">
-              <p>If you change your mind, you can <a href="${process.env.BASE_URL}/v1/newsletters/unsubscribe?email=${email}">unsubscribe</a> at any time.</p>
+              <p>If you change your mind, you can <a href="${process.env.FRONTEND_URL}/unsubscribe?email=${subscriber.email}">unsubscribe</a> at any time.</p>
             </div>
           </div>
         </body>
@@ -171,12 +171,12 @@ export const sendNewPostNotification = async (subscribers, post) => {
                 ` : ''}
                 <p><strong>Author:</strong> ${post.author.username}</p>
                 <div style="text-align: center; margin: 30px 0;">
-                  <a href="${process.env.BASE_URL}/v1/posts/${post.slug}" class="button">Read Full Post</a>
+                  <a href="${process.env.FRONTEND_URL}/posts/${post.slug}" class="button">Read Full Post</a>
                 </div>
                 <div class="footer">
                   <p>You're receiving this email because you subscribed to updates from our blog.</p>
                   <p>
-                    <a href="${process.env.BASE_URL}/v1/newsletters/unsubscribe?email=${subscriber.email}" style="color: #666;">Unsubscribe from notifications</a>
+                    <a href="${process.env.FRONTEND_URL}/unsubscribe?email=${subscriber.email}" style="color: #666;">Unsubscribe from notifications</a>
                   </p>
                 </div>
               </div>
@@ -299,12 +299,12 @@ export const sendUserWelcomeEmail = async (user) => {
                 </div>
   
                 <div style="text-align: center;">
-                  <a href="${process.env.BASE_URL}/v1/posts" class="cta-button">Start Exploring Posts</a>
+                  <a href="${process.env.FRONTEND_URL}/posts" class="cta-button">Start Exploring Posts</a>
                 </div>
   
                 ${user.role === 'admin' ? `
                 <div style="text-align: center; margin-top: 20px;">
-                  <a href="${process.env.BASE_URL}/admin/dashboard" class="cta-button" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);">Go to Admin Dashboard</a>
+                  <a href="${process.env.FRONTEND_URL}/admin" class="cta-button" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);">Go to Admin Dashboard</a>
                 </div>
                 ` : ''}
               </div>
@@ -343,7 +343,7 @@ export const sendUserWelcomeEmail = async (user) => {
 
 export const sendPasswordResetEmail = async (email, resetToken) => {
   try {
-    const resetUrl = `${process.env.BASE_URL}/v1/auth/reset-password?token=${resetToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
     const msg = {
       from: process.env.FROM_EMAIL,
