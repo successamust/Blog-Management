@@ -102,7 +102,7 @@ export const login = async (req, res) => {
 
 export const getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('username email role bookmarkedPosts likedPosts');
+    const user = await User.findById(req.user._id).select('username email role bookmarkedPosts likedPosts createdAt');
     res.json({
       user: {
         id: user._id,
@@ -111,7 +111,8 @@ export const getMe = async (req, res) => {
         email: user.email,
         role: user.role,
         bookmarkedPosts: user.bookmarkedPosts || [],
-        likedPosts: user.likedPosts || []
+        likedPosts: user.likedPosts || [],
+        createdAt: user.createdAt
       }
     });
   } catch (error) {
