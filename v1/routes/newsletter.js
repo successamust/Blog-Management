@@ -14,7 +14,7 @@ router.post('/subscribe', [
     .normalizeEmail()
 ], newsletterController.subscribe);
 
-router.post('/unsubscribe', [
+router.get('/unsubscribe', [
   newsletterLimiter,
   body('email')
     .isEmail()
