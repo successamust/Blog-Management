@@ -348,7 +348,7 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
     const msg = {
       from: process.env.FROM_EMAIL,
       to: email,
-      subject: 'Password Reset Request - The Nexus Blog',
+      subject: 'Password Reset Request - Nexus',
       html: `
         <!DOCTYPE html>
         <html>
@@ -369,7 +369,7 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
           </div>
           <div class="content">
             <h2>Hello!</h2>
-            <p>You requested to reset your password for your Nexus Blog account.</p>
+            <p>You requested to reset your password for your Nexus account.</p>
             <p>Click the button below to reset your password. This link will expire in 1 hour.</p>
             
             <div style="text-align: center; margin: 30px 0;">
@@ -404,7 +404,7 @@ export const sendPasswordChangedEmail = async (email) => {
     const msg = {
       from: process.env.FROM_EMAIL,
       to: email,
-      subject: 'Password Changed Successfully - The Nexus Blog',
+      subject: 'Password Changed Successfully - Nexus',
       html: `
         <!DOCTYPE html>
         <html>
