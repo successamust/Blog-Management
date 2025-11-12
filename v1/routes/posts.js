@@ -10,10 +10,7 @@ router.post('/create', authenticate, requireAuthorOrAdmin, validatePost, postCon
 router.put('/update/:id', authenticate, validatePost, postController.updatePost);
 
 router.delete('/delete/:id', authenticate, requireAdmin, postController.deletePost);
-
-// Optional authentication for viewing draft posts - allows authors/admins to see their drafts
 router.get('/', optionalAuthenticate, postController.getPosts);
-// Optional authentication for viewing draft posts - allows authors/admins to view their own drafts
 router.get('/:slug', optionalAuthenticate, postController.getPostBySlug);
 router.get('/:postId/related', postController.getRelatedPosts);
 

@@ -23,13 +23,12 @@ export const authenticate = async (req, res, next) => {
   }
 };
 
-// Optional authentication - doesn't fail if no token, but sets req.user if token is valid
 export const optionalAuthenticate = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!token) {
-      return next(); // No token, continue without authentication
+      return next();
     }
 
     try {
@@ -40,13 +39,11 @@ export const optionalAuthenticate = async (req, res, next) => {
         req.user = user;
       }
     } catch (error) {
-      // Invalid token, but continue without authentication
-      // Don't set req.user
     }
     
     next();
   } catch (error) {
-    next(); // Continue even if there's an error
+    next();
   }
 };
 

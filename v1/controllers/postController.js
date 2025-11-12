@@ -11,66 +11,52 @@ export const getPosts = async (req, res) => {
     const includeDrafts = req.query.includeDrafts === 'true' || req.query.includeDrafts === true;
     const status = req.query.status;
 
-    // Build query based on user role and parameters
     let query = {};
 
-    // If user is authenticated and wants to include drafts
     if (includeDrafts && req.user) {
       if (req.user.role === 'admin') {
-        // Admins can see all posts (published and drafts)
-        // No filter needed - show all
         query = {};
       } else if (req.user.role === 'author') {
-        // Authors can see all published posts AND their own draft posts
         query = {
           $or: [
-            { isPublished: true }, // All published posts (from any author)
+            { isPublished: true },
             { 
               isPublished: false,
-              author: req.user._id // Their own drafts only
+              author: req.user._id
             }
           ]
         };
       } else {
-        // Regular users can only see published posts
         query = { isPublished: true };
       }
     } else {
-      // Default: only published posts for public access
       query = { isPublished: true };
     }
 
-    // Handle status filter if provided
     if (status && status !== 'all') {
       if (status === 'published') {
-        // Filter to only published posts
         if (query.$or) {
-          // If we have an $or query, replace it with just published posts
           query = { isPublished: true };
         } else {
           query.isPublished = true;
         }
       } else if (status === 'draft') {
-        // Filter to only draft posts
         if (req.user && req.user.role === 'author') {
-          // Authors can only see their own drafts
           query = {
             isPublished: false,
             author: req.user._id
           };
         } else if (req.user && req.user.role === 'admin') {
-          // Admins can see all drafts
           query = { isPublished: false };
         } else {
-          // Regular users can't see drafts
-          query = { _id: null }; // Return empty result
+          query = { _id: null };
         }
       }
     }
 
     const posts = await Post.find(query)
       .populate('author', 'username profilePicture')
-      .sort({ publishedAt: -1, createdAt: -1 }) // Sort by publishedAt for published, createdAt for drafts
+      .sort({ publishedAt: -1, createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
@@ -90,21 +76,17 @@ export const getPosts = async (req, res) => {
 
 export const getPostBySlug = async (req, res) => {
   try {
-    // First try to find published post (public access)
     let post = await Post.findOne({ 
       slug: req.params.slug, 
       isPublished: true 
     }).populate('author', 'username profilePicture');
 
-    // If not found and user is authenticated, check for draft posts
     if (!post && req.user) {
       post = await Post.findOne({ 
         slug: req.params.slug 
       }).populate('author', 'username profilePicture');
 
-      // If found but unpublished, check if user has permission to view it
       if (post && !post.isPublished) {
-        // Get author ID - handle both populated and non-populated cases
         const postAuthorId = post.author?._id?.toString() || 
                             post.author?.toString() || 
                             post.author?._id || 
@@ -123,7 +105,6 @@ export const getPostBySlug = async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    // Only increment viewCount for published posts
     if (post.isPublished) {
       post.viewCount += 1;
       await post.save();
