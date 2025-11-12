@@ -5,6 +5,120 @@ dotenv.config();
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
+const currentYear = new Date().getFullYear();
+
+// Helper to get logo URL - uses PNG for email compatibility
+const getLogoUrl = () => {
+  const frontendUrl = process.env.FRONTEND_URL || 'https://thenexusblog.vercel.app';
+  return `${frontendUrl}/email-assets/nexus-logo-email.png`;
+};
+
+const buildEmailTemplate = ({
+  preheader = '',
+  heroTitle,
+  heroSubtitle = '',
+  intro = '',
+  contentHtml = '',
+  buttonText,
+  buttonUrl,
+  outroHtml = '',
+  footerNote = `© ${currentYear} Nexus · Stories Worth Sharing`,
+  unsubscribeUrl,
+  showLogo = true,
+}) => {
+  const buttonMarkup =
+    buttonText && buttonUrl
+      ? `
+        <div style="text-align:center;margin:36px 0 12px;">
+          <a href="${buttonUrl}"
+            style="display:inline-block;padding:14px 32px;background-color:#1A8917;color:#ffffff;text-decoration:none;border-radius:999px;font-weight:600;letter-spacing:0.03em;box-shadow:0 12px 30px rgba(26,137,23,0.25);">
+            ${buttonText}
+          </a>
+        </div>
+      `
+      : '';
+
+  const unsubscribeMarkup = unsubscribeUrl
+    ? `<p style="margin:18px 0 0;font-size:12px;color:#94a3b8;">Prefer fewer emails? <a href="${unsubscribeUrl}" style="color:#1A8917;text-decoration:none;">Unsubscribe</a></p>`
+    : '';
+
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta name="color-scheme" content="light">
+      <meta name="supported-color-schemes" content="light">
+      <style>
+        @media screen and (max-width: 640px) {
+          .container { padding: 20px !important; }
+          .card { border-radius: 20px !important; }
+          .body { padding: 28px !important; }
+          h1 { font-size: 26px !important; }
+        }
+      </style>
+    </head>
+    <body style="margin:0;padding:0;background-color:#f4f9f3;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#111827;">
+      <span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;font-size:0;line-height:0;">${preheader}</span>
+      <div class="container" style="width:100%;max-width:640px;margin:0 auto;padding:32px 24px;">
+        <div class="card" style="background-color:#ffffff;border-radius:28px;overflow:hidden;box-shadow:0 22px 55px rgba(15,23,42,0.08);">
+          <div style="background:linear-gradient(140deg,#0f172a 0%,#1a8917 95%);padding:40px 36px;color:#f8fafc;">
+            ${
+              showLogo
+                ? `
+            <div style="text-align:center;margin-bottom:24px;">
+              <img src="${getLogoUrl()}" 
+                   alt="Nexus - Stories Worth Sharing" 
+                   width="180" 
+                   height="auto"
+                   style="max-width:180px;height:auto;display:block;margin:0 auto;"
+                   border="0">
+            </div>
+            `
+                : `
+            <div style="font-size:18px;font-weight:600;letter-spacing:0.5em;text-transform:uppercase;margin-bottom:20px;display:inline-block;">
+              <span style="letter-spacing:0.45em;">NE</span><span style="color:#86efac;letter-spacing:0.45em;">X</span><span style="letter-spacing:0.45em;">US</span>
+            </div>
+            `
+            }
+            <h1 style="margin:0;font-size:30px;line-height:1.2;font-weight:700;text-align:center;">${heroTitle}</h1>
+            ${
+              heroSubtitle
+                ? `<p style="margin:12px 0 0;font-size:16px;line-height:1.6;color:rgba(248,250,252,0.82);text-align:center;">${heroSubtitle}</p>`
+                : ''
+            }
+          </div>
+          <div class="body" style="padding:36px 36px 34px;">
+            ${
+              intro
+                ? `<p style="margin:0 0 18px;font-size:16px;line-height:1.7;color:#1f2937;">${intro}</p>`
+                : ''
+            }
+            ${
+              contentHtml
+                ? `<div style="font-size:15px;line-height:1.75;color:#1f2937;">${contentHtml}</div>`
+                : ''
+            }
+            ${buttonMarkup}
+            ${
+              outroHtml
+                ? `<div style="margin-top:24px;font-size:14px;line-height:1.7;color:#4b5563;">${outroHtml}</div>`
+                : ''
+            }
+            <div style="margin-top:30px;padding-top:20px;border-top:1px solid rgba(15,23,42,0.08);font-size:13px;line-height:1.7;color:#64748b;">
+              ${footerNote}
+              ${unsubscribeMarkup}
+            </div>
+          </div>
+        </div>
+        <p style="text-align:center;margin:22px 0 0;font-size:12px;color:#94a3b8;">Delivered by Nexus · Stories Worth Sharing</p>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
 export const sendNewsletter = async (subscribers, subject, content) => {
   try {
     console.log(`📧 Preparing to send newsletter to ${subscribers.length} subscribers`);
@@ -15,36 +129,18 @@ export const sendNewsletter = async (subscribers, subject, content) => {
           to: subscriber.email,
           from: process.env.FROM_EMAIL || 'blog@example.com',
           subject: subject,
-          html: `
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <meta charset="utf-8">
-              <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-                .footer { text-align: center; margin-top: 20px; padding: 20px; color: #666; font-size: 12px; border-top: 1px solid #ddd; }
-                .button { background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0; }
-                .unsubscribe { color: #666; font-size: 12px; margin-top: 20px; }
-              </style>
-            </head>
-            <body>
-              <div class="header">
-                <h1>${subject}</h1>
-              </div>
-              <div class="content">
-                ${content}
-                <div class="footer">
-                  <p>You're receiving this email because you subscribed to our newsletter.</p>
-                  <p class="unsubscribe">
-                    <a href="${process.env.FRONTEND_URL}/unsubscribe?email=${encodeURIComponent(subscriber.email)}" style="color: #666;">Unsubscribe from our newsletter</a>
-                  </p>
-                </div>
-              </div>
-            </body>
-            </html>
-          `,
+          html: buildEmailTemplate({
+            preheader: subject,
+            heroTitle: subject || 'Nexus Newsletter',
+            heroSubtitle: 'Stories Worth Sharing from our community',
+            intro:
+              'Here is what the Nexus editorial team has curated for you this week. Settle in with a cup of curiosity and enjoy the latest highlights.',
+            contentHtml: content,
+            footerNote: `© ${currentYear} Nexus · Stories Worth Sharing`,
+            unsubscribeUrl: `${process.env.FRONTEND_URL}/unsubscribe?email=${encodeURIComponent(
+              subscriber.email
+            )}`,
+          }),
         };
 
         await sgMail.send(msg);
@@ -85,43 +181,26 @@ export const sendWelcomeEmail = async (email) => {
       to: email,
       from: process.env.FROM_EMAIL || 'blog@example.com',
       subject: 'Welcome to our newsletter!',
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 40px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-            .footer { text-align: center; margin-top: 20px; padding: 20px; color: #666; font-size: 12px; border-top: 1px solid #ddd; }
-            .button { background: #4facfe; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>Welcome to our newsletter! 🎉</h1>
-          </div>
-          <div class="content">
-            <h2>Thank you for subscribing!</h2>
-            <p>We're excited to have you join our community. You'll now receive:</p>
-            <ul>
-              <li>📝 Latest blog posts and updates</li>
-              <li>💡 Exclusive tips and insights</li>
-              <li>🎯 Curated content tailored for you</li>
-              <li>🚀 Early access to new features</li>
+      html: buildEmailTemplate({
+        preheader: 'Thanks for subscribing to Nexus.',
+        heroTitle: 'Welcome to Nexus',
+        heroSubtitle: 'Stories Worth Sharing, delivered to your inbox',
+        intro:
+          "We're excited to share thoughtful stories, community highlights, and creative inspiration with you. Here's what you can expect:",
+        contentHtml: `
+          <ul style="padding-left:18px;margin:0 0 22px;">
+            <li style="margin-bottom:10px;">📝 Fresh essays and deep dives from our authors</li>
+            <li style="margin-bottom:10px;">💡 Curated ideas to spark your curiosity</li>
+            <li style="margin-bottom:10px;">🎧 Occasional bonus content and behind-the-scenes notes</li>
+            <li>🚀 Early access to new features and community experiments</li>
             </ul>
-            <p>Stay tuned for our next update - we promise to only send you valuable content!</p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.FRONTEND_URL}/posts" class="button">Explore Our Blog</a>
-            </div>
-            <div class="footer">
-              <p>If you change your mind, you can <a href="${process.env.FRONTEND_URL}/unsubscribe?email=${encodeURIComponent(email)}">unsubscribe</a> at any time.</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
+        `,
+        buttonText: 'Start Reading',
+        buttonUrl: `${process.env.FRONTEND_URL}/posts`,
+        outroHtml:
+          'We publish with care so every email feels like a worthwhile read. If there is ever a topic you would love to see, simply reply and let us know.',
+        unsubscribeUrl: `${process.env.FRONTEND_URL}/unsubscribe?email=${encodeURIComponent(email)}`,
+      }),
     };
 
     await sgMail.send(msg);
@@ -143,46 +222,29 @@ export const sendNewPostNotification = async (subscribers, post) => {
           to: subscriber.email,
           from: process.env.FROM_EMAIL || 'blog@example.com',
           subject: `New Post: ${post.title}`,
-          html: `
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <meta charset="utf-8">
-              <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-                .excerpt { background: white; padding: 20px; border-left: 4px solid #667eea; margin: 20px 0; }
-                .footer { text-align: center; margin-top: 20px; padding: 20px; color: #666; font-size: 12px; border-top: 1px solid #ddd; }
-                .button { background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; }
-              </style>
-            </head>
-            <body>
-              <div class="header">
-                <h1>New Blog Post! 📝</h1>
-              </div>
-              <div class="content">
-                <h2>${post.title}</h2>
-                ${post.excerpt ? `
-                  <div class="excerpt">
-                    <strong>Excerpt:</strong>
-                    <p>${post.excerpt}</p>
-                  </div>
-                ` : ''}
-                <p><strong>Author:</strong> ${post.author.username}</p>
-                <div style="text-align: center; margin: 30px 0;">
-                  <a href="${process.env.FRONTEND_URL}/posts/${post.slug}" class="button">Read Full Post</a>
-                </div>
-                <div class="footer">
-                  <p>You're receiving this email because you subscribed to updates from our blog.</p>
-                  <p>
-                    <a href="${process.env.FRONTEND_URL}/unsubscribe?email=${encodeURIComponent(subscriber.email)}" style="color: #666;">Unsubscribe from notifications</a>
-                  </p>
-                </div>
-              </div>
-            </body>
-            </html>
-          `,
+          html: buildEmailTemplate({
+            preheader: `${post.title} by ${post.author.username}`,
+            heroTitle: post.title,
+            heroSubtitle: 'Fresh from the Nexus community',
+            intro: `Written by ${post.author.username}. Immerse yourself in a new perspective crafted for curious minds.`,
+            contentHtml: `
+              ${
+                post.excerpt
+                  ? `<div style="background:rgba(26,137,23,0.08);padding:18px 20px;border-radius:16px;margin-bottom:24px;border:1px solid rgba(26,137,23,0.12);">
+                      <strong style="display:block;margin-bottom:6px;color:#0f172a;">In this story:</strong>
+                      <p style="margin:0;color:#1f2937;">${post.excerpt}</p>
+                    </div>`
+                  : ''
+              }
+              <p style="margin-bottom:0;">Set aside a moment to read and reflect — we’d love to hear what you think.</p>
+            `,
+            buttonText: 'Read the full story',
+            buttonUrl: `${process.env.FRONTEND_URL}/posts/${post.slug}`,
+            outroHtml: 'Thanks for being part of Nexus. Your curiosity keeps this space vibrant.',
+            unsubscribeUrl: `${process.env.FRONTEND_URL}/unsubscribe?email=${encodeURIComponent(
+              subscriber.email
+            )}`,
+          }),
         };
 
         await sgMail.send(msg);
@@ -219,115 +281,34 @@ export const sendUserWelcomeEmail = async (user) => {
         from: process.env.FROM_EMAIL,
         to: user.email,
         subject: `Welcome to Our Blog, ${user.username}! 🎉`,
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <style>
-              body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f7f9fc; }
-              .container { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
-              .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; text-align: center; }
-              .content { padding: 40px 30px; }
-              .welcome-text { font-size: 18px; margin-bottom: 25px; color: #555; }
-              .features { background: #f8f9fa; padding: 25px; border-radius: 8px; margin: 25px 0; }
-              .feature-item { display: flex; align-items: center; margin-bottom: 15px; }
-              .feature-icon { font-size: 20px; margin-right: 15px; width: 30px; }
-              .cta-button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 14px 28px; text-decoration: none; border-radius: 25px; font-weight: bold; margin: 20px 0; }
-              .profile-info { background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #667eea; }
-              .footer { text-align: center; padding: 25px; color: #666; font-size: 14px; border-top: 1px solid #eee; }
-              .social-links { margin: 20px 0; }
-              .social-link { display: inline-block; margin: 0 10px; color: #667eea; text-decoration: none; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <h1 style="margin: 0; font-size: 32px;">Welcome Aboard! 🚀</h1>
-                <p style="margin: 10px 0 0; opacity: 0.9;">We're thrilled to have you join our community</p>
-              </div>
-              
-              <div class="content">
-                <div class="welcome-text">
-                  <h2>Hello, ${user.username}! 👋</h2>
-                  <p>Thank you for creating an account with us. Your blogging journey starts now!</p>
-                </div>
-  
-                <div class="profile-info">
-                  <h3 style="margin-top: 0; color: #667eea;">Your Account Details</h3>
-                  <p><strong>Username:</strong> ${user.username}</p>
-                  <p><strong>Email:</strong> ${user.email}</p>
-                  <p><strong>Account Created:</strong> ${new Date().toLocaleDateString()}</p>
-                </div>
-  
-                <div class="features">
-                  <h3 style="margin-top: 0; color: #764ba2;">What You Can Do Now:</h3>
-                  
-                  <div class="feature-item">
-                    <span class="feature-icon">📝</span>
-                    <div>
-                      <strong>Read Amazing Content</strong>
-                      <p style="margin: 5px 0 0; color: #666;">Explore our collection of blog posts and discover new perspectives.</p>
-                    </div>
-                  </div>
-  
-                  ${user.role === 'admin' ? `
-                  <div class="feature-item">
-                    <span class="feature-icon">✍️</span>
-                    <div>
-                      <strong>Create & Manage Posts</strong>
-                      <p style="margin: 5px 0 0; color: #666;">As an admin, you can write, edit, and publish blog posts.</p>
-                    </div>
-                  </div>
-                  ` : ''}
-  
-                  <div class="feature-item">
-                    <span class="feature-icon">🔔</span>
-                    <div>
-                      <strong>Stay Updated</strong>
-                      <p style="margin: 5px 0 0; color: #666;">Get notified about new posts and community updates.</p>
-                    </div>
-                  </div>
-  
-                  <div class="feature-item">
-                    <span class="feature-icon">💬</span>
-                    <div>
-                      <strong>Join the Conversation</strong>
-                      <p style="margin: 5px 0 0; color: #666;">Be part of our growing community of readers and writers.</p>
-                    </div>
-                  </div>
-                </div>
-  
-                <div style="text-align: center;">
-                  <a href="${process.env.FRONTEND_URL}/posts" class="cta-button">Start Exploring Posts</a>
-                </div>
-  
-                ${user.role === 'admin' ? `
-                <div style="text-align: center; margin-top: 20px;">
-                  <a href="${process.env.FRONTEND_URL}/admin" class="cta-button" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);">Go to Admin Dashboard</a>
-                </div>
-                ` : ''}
-              </div>
-  
-              <div class="footer">
-                <p><strong>Need Help?</strong></p>
-                <p>If you have any questions or need assistance, don't hesitate to reach out to our support team.</p>
-                
-                <div class="social-links">
-                  <a href="#" class="social-link">Help Center</a> • 
-                  <a href="#" class="social-link">Contact Support</a> • 
-                  <a href="#" class="social-link">Community Forum</a>
-                </div>
-                
-                <p style="margin-top: 20px; font-size: 12px; color: #999;">
-                  You're receiving this email because you recently created an account on our blog.<br>
-                  If this wasn't you, please contact our support team immediately.
-                </p>
-              </div>
+        html: buildEmailTemplate({
+          preheader: `Welcome to Nexus, ${user.username}`,
+          heroTitle: `Welcome, ${user.username}!`,
+          heroSubtitle: 'Your Nexus profile is ready',
+          intro:
+            'Thanks for creating an account. Nexus is your space to discover ideas, follow thoughtful voices, and share your own perspective.',
+          contentHtml: `
+            <div style="background:rgba(26,137,23,0.08);padding:18px 20px;border-radius:16px;margin-bottom:26px;border:1px solid rgba(26,137,23,0.12);">
+              <strong style="display:block;margin-bottom:8px;color:#0f172a;">Your account</strong>
+              <p style="margin:0;">Username: <strong>${user.username}</strong><br>Email: <strong>${user.email}</strong><br>Joined: ${new Date().toLocaleDateString()}</p>
             </div>
-          </body>
-          </html>
-        `,
+            <ul style="padding-left:18px;margin:0;">
+              <li style="margin-bottom:12px;">🗂️ Save stories you love and build your personal library.</li>
+              <li style="margin-bottom:12px;">🔔 Follow authors to get notified when they publish.</li>
+              <li style="margin-bottom:12px;">💬 Join conversations and share your take in the comments.</li>
+              ${
+                user.role === 'admin'
+                  ? '<li style="margin-bottom:12px;">🛠️ Access the admin dashboard to manage posts and oversee the community.</li>'
+                  : ''
+              }
+              <li>🌱 Grow with a community that values thoughtful storytelling.</li>
+            </ul>
+          `,
+          buttonText: 'Explore Nexus',
+          buttonUrl: `${process.env.FRONTEND_URL}/posts`,
+          outroHtml:
+            "Need help getting started? Reply to this email or visit our help center anytime — the team is here for you.",
+        }),
       };
   
       await sgMail.send(msg);
@@ -349,45 +330,22 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
       from: process.env.FROM_EMAIL,
       to: email,
       subject: 'Password Reset Request - Nexus',
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-            .button { background: #EF4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0; }
-            .footer { text-align: center; margin-top: 20px; padding: 20px; color: #666; font-size: 12px; border-top: 1px solid #ddd; }
-            .code { background: #f0f0f0; padding: 10px; border-radius: 5px; font-family: monospace; margin: 15px 0; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>Password Reset Request</h1>
-          </div>
-          <div class="content">
-            <h2>Hello!</h2>
-            <p>You requested to reset your password for your Nexus account.</p>
-            <p>Click the button below to reset your password. This link will expire in 1 hour.</p>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetUrl}" class="button">Reset Your Password</a>
-            </div>
-
-            <p>Or copy and paste this URL in your browser:</p>
-            <div class="code">${resetUrl}</div>
-
-            <p>If you didn't request this reset, please ignore this email. Your password will remain unchanged.</p>
-            
-            <div class="footer">
-              <p>This is an automated message. Please do not reply to this email.</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
+      html: buildEmailTemplate({
+        preheader: 'Use this link to reset your Nexus password.',
+        heroTitle: 'Reset your password',
+        heroSubtitle: 'This link expires in 1 hour',
+        intro:
+          'We received a request to reset the password for your Nexus account. If that was you, use the secure link below to set a new password.',
+        buttonText: 'Reset password',
+        buttonUrl: resetUrl,
+        contentHtml: `
+          <p style="margin-top:0;">If the button does not work, copy and paste this link into your browser:</p>
+          <div style="background:rgba(15,23,42,0.06);padding:12px 16px;border-radius:12px;font-family:'Roboto Mono',monospace;color:#0f172a;font-size:13px;word-break:break-all;">${resetUrl}</div>
+        `,
+        outroHtml:
+          'If you did not request a password reset, you can safely ignore this email — your password will remain the same.',
+        footerNote: `Need help? Contact support at ${process.env.SUPPORT_EMAIL || 'support@nexus.blog'}.`,
+      }),
     };
 
     await sgMail.send(msg);
@@ -405,46 +363,26 @@ export const sendPasswordChangedEmail = async (email) => {
       from: process.env.FROM_EMAIL,
       to: email,
       subject: 'Password Changed Successfully - Nexus',
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-            .footer { text-align: center; margin-top: 20px; padding: 20px; color: #666; font-size: 12px; border-top: 1px solid #ddd; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>Password Changed Successfully</h1>
+      html: buildEmailTemplate({
+        preheader: 'Your Nexus password was just updated.',
+        heroTitle: 'Password updated',
+        heroSubtitle: 'Your account security matters to us',
+        intro:
+          'This is a confirmation that your Nexus password has been changed successfully. No further action is required if you made this update.',
+        contentHtml: `
+          <div style="background:rgba(26,137,23,0.09);padding:16px 18px;border-radius:16px;margin-bottom:24px;border:1px solid rgba(26,137,23,0.12);">
+            <strong style="display:block;margin-bottom:6px;color:#0f172a;">Security snapshot</strong>
+            <p style="margin:0;color:#1f2937;">Time: ${new Date().toLocaleString()}<br>Location: Account activity</p>
           </div>
-          <div class="content">
-            <h2>Security Notice</h2>
-            <p>Your password has been successfully changed.</p>
-            <p>If you made this change, no further action is needed.</p>
-            
-            <div style="background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <strong>📅 Change Time:</strong> ${new Date().toLocaleString()}<br>
-              <strong>🌐 Location:</strong> Your account
-            </div>
-
-            <p><strong>If you didn't make this change:</strong></p>
-            <ul>
-              <li>Reset your password immediately using the forgot password feature</li>
-              <li>Contact support if you need assistance</li>
-              <li>Check your account for any suspicious activity</li>
+          <p style="margin:0 0 14px;">If this wasn’t you, please reset your password immediately and let our team know so we can help secure your account.</p>
+          <ul style="padding-left:18px;margin:0;">
+            <li style="margin-bottom:10px;">Reset your password using the “Forgot password” option.</li>
+            <li style="margin-bottom:10px;">Contact support so we can assist you.</li>
+            <li>Review your account activity for anything unexpected.</li>
             </ul>
-
-            <div class="footer">
-              <p>This is an automated security notification.</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
+        `,
+        footerNote: `This is an automated security notice from Nexus.`,
+      }),
     };
 
     await sgMail.send(msg);
