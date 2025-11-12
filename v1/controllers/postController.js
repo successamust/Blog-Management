@@ -104,7 +104,13 @@ export const getPostBySlug = async (req, res) => {
 
       // If found but unpublished, check if user has permission to view it
       if (post && !post.isPublished) {
-        const isAuthor = post.author._id.toString() === req.user._id.toString();
+        // Get author ID - handle both populated and non-populated cases
+        const postAuthorId = post.author?._id?.toString() || 
+                            post.author?.toString() || 
+                            post.author?._id || 
+                            post.author;
+        const userId = req.user._id?.toString() || req.user._id || req.user.id?.toString() || req.user.id;
+        const isAuthor = postAuthorId && userId && String(postAuthorId) === String(userId);
         const isAdmin = req.user.role === 'admin';
         
         if (!isAuthor && !isAdmin) {
