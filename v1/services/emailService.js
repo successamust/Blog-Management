@@ -82,10 +82,10 @@ const buildEmailTemplate = ({
             </div>
             `
             }
-            <h1 style="margin:0;font-size:30px;line-height:1.2;font-weight:700;text-align:center;color:#ffffff !important;">${heroTitle}</h1>
+            <h1 style="margin:0;font-size:30px;line-height:1.2;font-weight:700;text-align:center;color:#ffffff;">${heroTitle}</h1>
             ${
               heroSubtitle
-                ? `<p style="margin:12px 0 0;font-size:16px;line-height:1.6;color:#ffffff;text-align:center;opacity:0.95;">${heroSubtitle}</p>`
+                ? `<p style="margin:12px 0 0;font-size:16px;line-height:1.6;color:#ffffff;text-align:center;">${heroSubtitle}</p>`
                 : ''
             }
           </div>
