@@ -48,14 +48,22 @@ const buildEmailTemplate = ({
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
-      <meta name="color-scheme" content="light">
-      <meta name="supported-color-schemes" content="light">
+      <meta name="color-scheme" content="light only">
+      <meta name="supported-color-schemes" content="light only">
       <style>
+        :root { color-scheme: light only; }
+        * { -webkit-text-size-adjust: 100%; }
         @media screen and (max-width: 640px) {
           .container { padding: 20px !important; }
           .card { border-radius: 20px !important; }
           .body { padding: 28px !important; }
           h1 { font-size: 26px !important; }
+        }
+        @media (prefers-color-scheme: dark) {
+          .email-header * { color: #ffffff !important; }
+          .email-header h1 { color: #ffffff !important; }
+          .email-header p { color: #ffffff !important; }
+          .email-header span { color: #ffffff !important; }
         }
       </style>
     </head>
@@ -63,7 +71,7 @@ const buildEmailTemplate = ({
       <span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;font-size:0;line-height:0;">${preheader}</span>
       <div class="container" style="width:100%;max-width:640px;margin:0 auto;padding:32px 24px;">
         <div class="card" style="background-color:#ffffff;border-radius:28px;overflow:hidden;box-shadow:0 22px 55px rgba(15,23,42,0.08);">
-          <div style="background:linear-gradient(140deg,#0f172a 0%,#1a8917 95%);padding:40px 36px;color:#ffffff;">
+          <div class="email-header" style="background:linear-gradient(140deg,#0f172a 0%,#1a8917 95%);padding:40px 36px;color:#ffffff !important;">
             ${
               showLogo
                 ? `
@@ -77,15 +85,15 @@ const buildEmailTemplate = ({
             </div>
             `
                 : `
-            <div style="font-size:18px;font-weight:600;letter-spacing:0.5em;text-transform:uppercase;margin-bottom:20px;display:inline-block;color:#ffffff;">
-              <span style="letter-spacing:0.45em;color:#ffffff;">NE</span><span style="color:#ffffff;letter-spacing:0.45em;">X</span><span style="letter-spacing:0.45em;color:#ffffff;">US</span>
+            <div style="font-size:18px;font-weight:600;letter-spacing:0.5em;text-transform:uppercase;margin-bottom:20px;display:inline-block;color:#ffffff !important;">
+              <span style="letter-spacing:0.45em;color:#ffffff !important;">NE</span><span style="color:#ffffff !important;letter-spacing:0.45em;">X</span><span style="letter-spacing:0.45em;color:#ffffff !important;">US</span>
             </div>
             `
             }
-            <h1 style="margin:0;font-size:30px;line-height:1.2;font-weight:700;text-align:center;color:#ffffff;">${heroTitle}</h1>
+            <h1 style="margin:0;font-size:30px;line-height:1.2;font-weight:700;text-align:center;color:#ffffff !important;">${heroTitle}</h1>
             ${
               heroSubtitle
-                ? `<p style="margin:12px 0 0;font-size:16px;line-height:1.6;color:#ffffff;text-align:center;">${heroSubtitle}</p>`
+                ? `<p style="margin:12px 0 0;font-size:16px;line-height:1.6;color:#ffffff !important;text-align:center;">${heroSubtitle}</p>`
                 : ''
             }
           </div>
