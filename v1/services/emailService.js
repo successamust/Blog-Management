@@ -9,7 +9,7 @@ const currentYear = new Date().getFullYear();
 
 // Helper to get logo URL - uses PNG for email compatibility
 const getLogoUrl = () => {
-  const frontendUrl = process.env.FRONTEND_URL || 'https://thenexusblog.vercel.app';
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   return `${frontendUrl}/email-assets/nexus-logo-email.png`;
 };
 
@@ -63,7 +63,7 @@ const buildEmailTemplate = ({
       <span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;font-size:0;line-height:0;">${preheader}</span>
       <div class="container" style="width:100%;max-width:640px;margin:0 auto;padding:32px 24px;">
         <div class="card" style="background-color:#ffffff;border-radius:28px;overflow:hidden;box-shadow:0 22px 55px rgba(15,23,42,0.08);">
-          <div style="background:linear-gradient(140deg,#0f172a 0%,#1a8917 95%);padding:40px 36px;color:#f8fafc;">
+          <div style="background:linear-gradient(140deg,#0f172a 0%,#1a8917 95%);padding:40px 36px;color:#ffffff;">
             ${
               showLogo
                 ? `
@@ -77,15 +77,15 @@ const buildEmailTemplate = ({
             </div>
             `
                 : `
-            <div style="font-size:18px;font-weight:600;letter-spacing:0.5em;text-transform:uppercase;margin-bottom:20px;display:inline-block;">
-              <span style="letter-spacing:0.45em;">NE</span><span style="color:#86efac;letter-spacing:0.45em;">X</span><span style="letter-spacing:0.45em;">US</span>
+            <div style="font-size:18px;font-weight:600;letter-spacing:0.5em;text-transform:uppercase;margin-bottom:20px;display:inline-block;color:#ffffff;">
+              <span style="letter-spacing:0.45em;color:#ffffff;">NE</span><span style="color:#ffffff;letter-spacing:0.45em;">X</span><span style="letter-spacing:0.45em;color:#ffffff;">US</span>
             </div>
             `
             }
-            <h1 style="margin:0;font-size:30px;line-height:1.2;font-weight:700;text-align:center;">${heroTitle}</h1>
+            <h1 style="margin:0;font-size:30px;line-height:1.2;font-weight:700;text-align:center;color:#ffffff;">${heroTitle}</h1>
             ${
               heroSubtitle
-                ? `<p style="margin:12px 0 0;font-size:16px;line-height:1.6;color:rgba(248,250,252,0.82);text-align:center;">${heroSubtitle}</p>`
+                ? `<p style="margin:12px 0 0;font-size:16px;line-height:1.6;color:#ffffff;text-align:center;opacity:0.95;">${heroSubtitle}</p>`
                 : ''
             }
           </div>
