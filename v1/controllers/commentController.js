@@ -19,10 +19,25 @@ export const createComment = async (req, res) => {
       });
     }
 
+    let parentCommentDoc = null;
+    if (parentComment) {
+      parentCommentDoc = await Comment.findById(parentComment);
+
+      if (
+        !parentCommentDoc ||
+        parentCommentDoc.post.toString() !== postId
+      ) {
+        return res.status(400).json({
+          message: 'Invalid parent comment reference'
+        });
+      }
+    }
+
     const comment = new Comment({
       content,
       author: req.user._id,
-      post: postId
+      post: postId,
+      parentComment: parentCommentDoc ? parentCommentDoc._id : null
     });
 
     await comment.save();
@@ -30,7 +45,10 @@ export const createComment = async (req, res) => {
 
     res.status(201).json({
       message: 'Comment added successfully',
-      comment
+      comment: {
+        ...comment.toObject(),
+        replies: []
+      }
     });
   } catch (error) {
     console.error('Create comment error:', error);
@@ -150,39 +168,46 @@ export const likeComment = async (req, res) => {
 };
 
 export const getPostComments = async (req, res) => {
-    try {
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 10;
-      const skip = (page - 1) * limit;
-  
-      const comments = await Comment.find({ 
-        post: req.params.postId,
-        isApproved: true 
-      })
-        .populate('author', 'username profilePicture')
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit);
-  
-      const total = await Comment.countDocuments({ 
-        post: req.params.postId,
-        isApproved: true 
-      });
-  
-      res.json({
-        comments,
-        pagination: {
-          currentPage: page,
-          totalPages: Math.ceil(total / limit),
-          totalComments: total,
-          hasNext: page < Math.ceil(total / limit),
-          hasPrev: page > 1
-        }
-      });
-    } catch (error) {
-      console.error('Get comments error:', error);
-      res.status(500).json({ 
-        message: 'Failed to fetch comments'
-      });
-    }
-  };
+  try {
+    const comments = await Comment.find({ 
+      post: req.params.postId,
+      isApproved: true 
+    })
+      .populate('author', 'username profilePicture')
+      .sort({ createdAt: 1 })
+      .lean();
+
+    const commentMap = new Map();
+    comments.forEach((comment) => {
+      const normalized = {
+        ...comment,
+        _id: comment._id.toString(),
+        parentComment: comment.parentComment ? comment.parentComment.toString() : null,
+        likes: (comment.likes || []).map((id) => id.toString()),
+        replies: []
+      };
+      commentMap.set(normalized._id, normalized);
+    });
+
+    const rootComments = [];
+    commentMap.forEach((comment) => {
+      if (comment.parentComment && commentMap.has(comment.parentComment)) {
+        commentMap.get(comment.parentComment).replies.unshift(comment);
+      } else {
+        rootComments.unshift(comment);
+      }
+    });
+
+    res.json({
+      comments: rootComments,
+      pagination: {
+        totalComments: comments.length
+      }
+    });
+  } catch (error) {
+    console.error('Get comments error:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch comments'
+    });
+  }
+};
