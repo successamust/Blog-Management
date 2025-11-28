@@ -286,26 +286,14 @@ export const getUserInvitations = async (req, res) => {
     let sentInvitations = [];
 
     if (includeSent) {
-      const userPosts = await Post.find({ author: req.user._id }).select('_id').lean();
-      const postIds = userPosts.map(p => p._id);
-      console.log('User posts found:', postIds.length, 'Post IDs:', postIds);
-
-      if (postIds.length > 0) {
-        const allSentByUser = await CollaborationInvitation.find({
-          invitedBy: req.user._id
-        }).lean();
-        console.log('All invitations sent by user:', allSentByUser.length);
-        
-        sentInvitations = await CollaborationInvitation.find({
-          invitedBy: req.user._id,
-          post: { $in: postIds },
-          email: { $ne: user.email.toLowerCase() }
-        })
-          .populate('post', 'title slug')
-          .sort({ createdAt: -1 })
-          .lean();
-        console.log('Sent invitations after filtering:', sentInvitations.length);
-      }
+      sentInvitations = await CollaborationInvitation.find({
+        invitedBy: req.user._id,
+        email: { $ne: user.email.toLowerCase() }
+      })
+        .populate('post', 'title slug')
+        .sort({ createdAt: -1 })
+        .lean();
+      console.log('Sent invitations found:', sentInvitations.length);
     }
 
     const allInvitations = [
@@ -421,29 +409,14 @@ export const getMySentInvitations = async (req, res) => {
     console.log('=== getMySentInvitations DEBUG ===');
     console.log('User ID:', userId);
 
-    const userPosts = await Post.find({ author: userId }).select('_id').lean();
-    const postIds = userPosts.map(p => p._id);
-    console.log('User posts found:', postIds.length, 'Post IDs:', postIds);
-
-    if (postIds.length === 0) {
-      console.log('No posts found for user, returning empty array');
-      return res.json({ invitations: [] });
-    }
-
-    const allInvitationsByUser = await CollaborationInvitation.find({
-      invitedBy: userId
-    }).lean();
-    console.log('All invitations where user is invitedBy:', allInvitationsByUser.length);
-
     const invitations = await CollaborationInvitation.find({
-      invitedBy: userId,
-      post: { $in: postIds }
+      invitedBy: userId
     })
       .populate('post', 'title slug')
       .sort({ createdAt: -1 })
       .lean();
 
-    console.log('Filtered invitations (matching user posts):', invitations.length);
+    console.log('Sent invitations found:', invitations.length);
 
     res.json({
       invitations: invitations.map(inv => ({
