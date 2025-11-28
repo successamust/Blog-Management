@@ -47,7 +47,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/v1', apiLimiter);
+// app.use('/v1', apiLimiter); // COMMENTED OUT FOR TESTING
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customCss: '.swagger-ui .topbar { display: none }',

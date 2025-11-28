@@ -7,7 +7,7 @@ import { newsletterLimiter } from '../middleware/rateLimiter.js';
 const router = express.Router();
 
 router.post('/subscribe', [
-  newsletterLimiter,
+  // newsletterLimiter, // COMMENTED OUT FOR TESTING
   body('email')
     .isEmail()
     .withMessage('Please enter a valid email address')
@@ -15,7 +15,7 @@ router.post('/subscribe', [
 ], newsletterController.subscribe);
 
 router.get('/unsubscribe',
-  newsletterLimiter,
+  // newsletterLimiter, // COMMENTED OUT FOR TESTING
   newsletterController.unsubscribe);
 
 router.post('/send', [

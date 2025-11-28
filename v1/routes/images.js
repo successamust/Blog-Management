@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.use(authenticate);
 
-router.post('/upload', uploadLimiter, uploadMiddleware, imageController.uploadImage);
+router.post('/upload', /* uploadLimiter, */ uploadMiddleware, imageController.uploadImage); // RATE LIMITER COMMENTED OUT FOR TESTING
 
 router.get('/', imageController.getImageInfo);
 

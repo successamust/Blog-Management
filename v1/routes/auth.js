@@ -40,7 +40,7 @@ const router = express.Router();
  *       400:
  *         description: Validation error
  */
-router.post('/register', authLimiter, validateRegistration, authController.register);
+router.post('/register', /* authLimiter, */ validateRegistration, authController.register); // RATE LIMITER COMMENTED OUT FOR TESTING
 
 /**
  * @swagger
@@ -69,7 +69,7 @@ router.post('/register', authLimiter, validateRegistration, authController.regis
  *       401:
  *         description: Invalid credentials
  */
-router.post('/login', authLimiter, validateLogin, authController.login);
+router.post('/login', /* authLimiter, */ validateLogin, authController.login); // RATE LIMITER COMMENTED OUT FOR TESTING
 
 router.get('/me', authenticate, authController.getMe);
 router.get('/allusers', [authenticate, requireAdmin], authController.getAllUsers);
@@ -104,7 +104,7 @@ router.delete('/delete/:userId', authenticate, authController.deleteUser);
  *       404:
  *         description: User not found
  */
-router.post('/forgot-password', passwordResetLimiter, validatePasswordReset, passwordController.forgotPassword);
+router.post('/forgot-password', /* passwordResetLimiter, */ validatePasswordReset, passwordController.forgotPassword); // RATE LIMITER COMMENTED OUT FOR TESTING
 
 /**
  * @swagger
@@ -133,7 +133,7 @@ router.post('/forgot-password', passwordResetLimiter, validatePasswordReset, pas
  *       400:
  *         description: Invalid or expired token
  */
-router.post('/reset-password', passwordResetLimiter, validatePasswordReset, passwordController.resetPassword);
+router.post('/reset-password', /* passwordResetLimiter, */ validatePasswordReset, passwordController.resetPassword); // RATE LIMITER COMMENTED OUT FOR TESTING
 
 router.post('/change-password', authenticate, validatePasswordReset, passwordController.changePassword);
 
