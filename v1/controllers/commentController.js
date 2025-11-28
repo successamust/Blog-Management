@@ -9,7 +9,7 @@ export const createComment = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { content } = req.body;
+    const { content, parentComment } = req.body;
     const postId = req.params.postId;
 
     const post = await Post.findById(postId);
