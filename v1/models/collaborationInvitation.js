@@ -20,7 +20,7 @@ const collaborationInvitationSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'accepted', 'rejected', 'expired'],
+    enum: ['pending', 'accepted', 'rejected', 'expired', 'revoked'],
     default: 'pending'
   },
   invitedBy: {
