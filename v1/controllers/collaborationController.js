@@ -267,11 +267,6 @@ export const getUserInvitations = async (req, res) => {
     const user = await User.findById(req.user._id);
     const includeSent = req.query.include === 'sent';
     
-    console.log('=== getUserInvitations DEBUG ===');
-    console.log('User ID:', req.user._id);
-    console.log('User email:', user.email);
-    console.log('Include sent:', includeSent);
-    
     const receivedInvitations = await CollaborationInvitation.find({
       email: user.email.toLowerCase(),
       status: 'pending'
@@ -280,8 +275,6 @@ export const getUserInvitations = async (req, res) => {
       .populate('invitedBy', 'username email')
       .sort({ createdAt: -1 })
       .lean();
-
-    console.log('Received invitations found:', receivedInvitations.length);
 
     let sentInvitations = [];
 
@@ -293,15 +286,12 @@ export const getUserInvitations = async (req, res) => {
         .populate('post', 'title slug')
         .sort({ createdAt: -1 })
         .lean();
-      console.log('Sent invitations found:', sentInvitations.length);
     }
 
     const allInvitations = [
       ...receivedInvitations.map(inv => ({ ...inv, type: 'received' })),
       ...sentInvitations.map(inv => ({ ...inv, type: 'sent' }))
     ];
-
-    console.log('Total invitations to return:', allInvitations.length);
 
     res.json({
       invitations: allInvitations
@@ -406,17 +396,12 @@ export const getMySentInvitations = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    console.log('=== getMySentInvitations DEBUG ===');
-    console.log('User ID:', userId);
-
     const invitations = await CollaborationInvitation.find({
       invitedBy: userId
     })
       .populate('post', 'title slug')
       .sort({ createdAt: -1 })
       .lean();
-
-    console.log('Sent invitations found:', invitations.length);
 
     res.json({
       invitations: invitations.map(inv => ({
@@ -440,12 +425,25 @@ export const revokeInvitation = async (req, res) => {
     const { invitationId } = req.params;
     const userId = req.user._id;
 
+    if (!invitationId) {
+      return res.status(400).json({ message: 'Invitation ID is required' });
+    }
+
     const invitation = await CollaborationInvitation.findById(invitationId);
     if (!invitation) {
       return res.status(404).json({ message: 'Invitation not found' });
     }
 
-    if (invitation.invitedBy.toString() !== userId.toString()) {
+    if (!invitation.invitedBy) {
+      return res.status(400).json({ 
+        message: 'Invalid invitation: missing sender information' 
+      });
+    }
+
+    const invitedById = invitation.invitedBy.toString ? invitation.invitedBy.toString() : String(invitation.invitedBy);
+    const userIdStr = userId.toString ? userId.toString() : String(userId);
+
+    if (invitedById !== userIdStr) {
       return res.status(403).json({ 
         message: 'Only the sender can revoke an invitation' 
       });
@@ -462,13 +460,21 @@ export const revokeInvitation = async (req, res) => {
 
     res.json({
       message: 'Invitation revoked successfully',
-      invitation
+      invitation: {
+        _id: invitation._id,
+        email: invitation.email,
+        role: invitation.role,
+        status: invitation.status,
+        post: invitation.post,
+        createdAt: invitation.createdAt,
+        updatedAt: invitation.updatedAt
+      }
     });
   } catch (error) {
     console.error('Revoke invitation error:', error);
     res.status(500).json({ 
       message: 'Failed to revoke invitation',
-      error: error.message 
+      error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message 
     });
   }
 };
