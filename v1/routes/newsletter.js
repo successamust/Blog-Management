@@ -48,4 +48,6 @@ router.get('/subscribers', [
   requireAdmin
 ], newsletterController.getAllSubscribers);
 
+router.get('/archive', newsletterController.getNewsletterArchive);
+
 export default router;

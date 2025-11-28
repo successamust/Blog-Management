@@ -10,6 +10,8 @@ export const getPosts = async (req, res) => {
     const skip = (page - 1) * limit;
     const includeDrafts = req.query.includeDrafts === 'true' || req.query.includeDrafts === true;
     const status = req.query.status;
+    const author = req.query.author;
+    const tags = req.query.tags;
 
     let query = {};
 
@@ -33,10 +35,38 @@ export const getPosts = async (req, res) => {
       query = { isPublished: true };
     }
 
+    if (author) {
+      const User = (await import('../models/user.js')).default;
+      const authorUser = await User.findOne({ 
+        username: { $regex: new RegExp(`^${author}$`, 'i') } 
+      }).select('_id');
+      
+      if (authorUser) {
+        query.author = authorUser._id;
+      } else {
+        return res.json({
+          posts: [],
+          currentPage: page,
+          totalPages: 0,
+          totalPosts: 0
+        });
+      }
+    }
+
+    if (tags) {
+      const tagArray = typeof tags === 'string' 
+        ? tags.split(',').map(tag => tag.trim().toLowerCase())
+        : Array.isArray(tags) 
+          ? tags.map(tag => String(tag).trim().toLowerCase())
+          : [String(tags).trim().toLowerCase()];
+      
+      query.tags = { $in: tagArray };
+    }
+
     if (status && status !== 'all') {
       if (status === 'published') {
         if (query.$or) {
-          query = { isPublished: true };
+          query = { ...query, isPublished: true };
         } else {
           query.isPublished = true;
         }
@@ -44,18 +74,33 @@ export const getPosts = async (req, res) => {
         if (req.user && req.user.role === 'author') {
           query = {
             isPublished: false,
-            author: req.user._id
+            author: req.user._id,
+            ...(author && { author: query.author }),
+            ...(tags && { tags: query.tags })
           };
         } else if (req.user && req.user.role === 'admin') {
-          query = { isPublished: false };
+          query = { 
+            isPublished: false,
+            ...(author && { author: query.author }),
+            ...(tags && { tags: query.tags })
+          };
         } else {
           query = { _id: null };
         }
       }
     }
 
+    if (query.isPublished === true || (!query.isPublished && !includeDrafts)) {
+      query.$or = [
+        { scheduledAt: null },
+        { scheduledAt: { $lte: new Date() } },
+        { scheduledAt: { $exists: false } }
+      ];
+    }
+
     const posts = await Post.find(query)
-      .populate('author', 'username profilePicture')
+      .populate('author', 'username profilePicture email bio authorProfile')
+      .populate('category', 'name slug color')
       .sort({ publishedAt: -1, createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -124,7 +169,25 @@ export const createPost = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { title, content, excerpt, featuredImage, tags, isPublished, category } = req.body;
+    const { title, content, excerpt, featuredImage, tags, isPublished, category, scheduledAt } = req.body;
+
+    // Validate scheduledAt
+    let finalIsPublished = isPublished;
+    let finalPublishedAt = isPublished ? new Date() : null;
+    let finalScheduledAt = null;
+
+    if (scheduledAt) {
+      const scheduledDate = new Date(scheduledAt);
+      if (isNaN(scheduledDate.getTime())) {
+        return res.status(400).json({ message: 'Invalid scheduled date' });
+      }
+      if (scheduledDate <= new Date()) {
+        return res.status(400).json({ message: 'Scheduled date must be in the future' });
+      }
+      finalScheduledAt = scheduledDate;
+      finalIsPublished = false; // Don't publish if scheduled
+      finalPublishedAt = null;
+    }
 
     const post = new Post({
       title,
@@ -133,9 +196,10 @@ export const createPost = async (req, res) => {
       featuredImage,
       tags,
       category,
-      isPublished,
+      isPublished: finalIsPublished,
+      scheduledAt: finalScheduledAt,
       author: req.user._id,
-      publishedAt: isPublished ? new Date() : null
+      publishedAt: finalPublishedAt
     });
 
     await post.save();
@@ -167,13 +231,37 @@ export const updatePost = async (req, res) => {
       });
     }
 
+    const { scheduledAt, isPublished } = req.body;
+
+    // Handle scheduled posts
+    if (scheduledAt !== undefined) {
+      if (scheduledAt === null) {
+        post.scheduledAt = null;
+      } else {
+        const scheduledDate = new Date(scheduledAt);
+        if (isNaN(scheduledDate.getTime())) {
+          return res.status(400).json({ message: 'Invalid scheduled date' });
+        }
+        if (scheduledDate <= new Date()) {
+          return res.status(400).json({ message: 'Scheduled date must be in the future' });
+        }
+        post.scheduledAt = scheduledDate;
+        post.isPublished = false; // Don't publish if scheduled
+        post.publishedAt = null;
+      }
+    }
+
     Object.keys(req.body).forEach(key => {
-      if (req.body[key] !== undefined) {
+      if (req.body[key] !== undefined && key !== 'scheduledAt') {
+        if (key === 'isPublished' && scheduledAt) {
+          // Don't allow publishing if scheduled
+          return;
+        }
         post[key] = req.body[key];
       }
     });
 
-    if (req.body.isPublished && !post.publishedAt) {
+    if (req.body.isPublished && !post.publishedAt && !post.scheduledAt) {
       post.publishedAt = new Date();
     }
 
@@ -269,6 +357,105 @@ export const getRelatedPosts = async (req, res) => {
     console.error('Get related posts error:', error);
     res.status(500).json({ 
       message: 'Failed to fetch related posts'
+    });
+  }
+};
+
+export const bulkDeletePosts = async (req, res) => {
+  try {
+    const { postIds } = req.body;
+
+    if (!Array.isArray(postIds) || postIds.length === 0) {
+      return res.status(400).json({ message: 'postIds array is required' });
+    }
+
+    // Check permissions - only admin or post authors can delete
+    if (req.user.role !== 'admin') {
+      const posts = await Post.find({ _id: { $in: postIds } }).select('author');
+      const unauthorized = posts.some(post => 
+        post.author.toString() !== req.user._id.toString()
+      );
+      if (unauthorized) {
+        return res.status(403).json({ 
+          message: 'You can only delete your own posts' 
+        });
+      }
+    }
+
+    const result = await Post.deleteMany({ _id: { $in: postIds } });
+
+    res.json({
+      message: `Successfully deleted ${result.deletedCount} post(s)`,
+      deletedCount: result.deletedCount
+    });
+  } catch (error) {
+    console.error('Bulk delete posts error:', error);
+    res.status(500).json({ 
+      message: 'Failed to delete posts',
+      error: error.message 
+    });
+  }
+};
+
+export const bulkUpdatePosts = async (req, res) => {
+  try {
+    const { postIds, updates } = req.body;
+
+    if (!Array.isArray(postIds) || postIds.length === 0) {
+      return res.status(400).json({ message: 'postIds array is required' });
+    }
+
+    if (!updates || typeof updates !== 'object') {
+      return res.status(400).json({ message: 'updates object is required' });
+    }
+
+    // Check permissions
+    if (req.user.role !== 'admin') {
+      const posts = await Post.find({ _id: { $in: postIds } }).select('author');
+      const unauthorized = posts.some(post => 
+        post.author.toString() !== req.user._id.toString()
+      );
+      if (unauthorized) {
+        return res.status(403).json({ 
+          message: 'You can only update your own posts' 
+        });
+      }
+    }
+
+    // Remove fields that shouldn't be bulk updated
+    const allowedFields = ['category', 'status', 'isPublished', 'tags'];
+    const filteredUpdates = {};
+    Object.keys(updates).forEach(key => {
+      if (allowedFields.includes(key)) {
+        if (key === 'status') {
+          filteredUpdates.isPublished = updates.status === 'published';
+          if (updates.status === 'published') {
+            filteredUpdates.publishedAt = new Date();
+          }
+        } else {
+          filteredUpdates[key] = updates[key];
+        }
+      }
+    });
+
+    if (Object.keys(filteredUpdates).length === 0) {
+      return res.status(400).json({ message: 'No valid fields to update' });
+    }
+
+    const result = await Post.updateMany(
+      { _id: { $in: postIds } },
+      { $set: filteredUpdates }
+    );
+
+    res.json({
+      message: `Successfully updated ${result.modifiedCount} post(s)`,
+      modifiedCount: result.modifiedCount
+    });
+  } catch (error) {
+    console.error('Bulk update posts error:', error);
+    res.status(500).json({ 
+      message: 'Failed to update posts',
+      error: error.message 
     });
   }
 };

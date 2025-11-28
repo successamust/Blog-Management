@@ -7,6 +7,7 @@ import connectDB from './v1/config/db.js'
 import logger from './v1/utils/logger.js'
 import { apiLimiter } from './v1/middleware/rateLimiter.js'
 import swaggerSpec from './v1/config/swagger.js'
+import { startScheduledJobs } from './v1/utils/scheduledJobs.js'
 
 const app = express()
 dotenv.config();
@@ -19,7 +20,11 @@ if (process.env.NODE_ENV === 'production' || process.env.TRUST_PROXY === 'true')
 }
 
 connectDB()
-  .then(() => logger.info('Database connected successfully'))
+  .then(() => {
+    logger.info('Database connected successfully');
+    // Start scheduled jobs after DB connection
+    startScheduledJobs();
+  })
   .catch(err => logger.error('Database connection failed:', err));
 
 app.use(cors({origin: "*"}))

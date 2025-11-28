@@ -35,6 +35,10 @@ const postSchema = new mongoose.Schema({
   publishedAt: {
     type: Date
   },
+  scheduledAt: {
+    type: Date,
+    default: null
+  },
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category'
@@ -56,6 +60,10 @@ const postSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  shareCount: {
+    type: Number,
+    default: 0
+  },
   viewCount: {
     type: Number,
     default: 0
@@ -64,6 +72,26 @@ const postSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  reactions: {
+    type: Map,
+    of: Number,
+    default: {}
+  },
+  collaborators: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    role: {
+      type: String,
+      enum: ['co-author', 'editor', 'reviewer'],
+      default: 'co-author'
+    },
+    joinedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   
 }, {
   timestamps: true
@@ -90,13 +118,22 @@ postSchema.pre('save', function(next) {
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-');
   }
-  next();
-});
-
-postSchema.pre('save', function(next) {
-  const totalInteractions = this.likes.length + this.dislikes.length + this.shares;
+  
+  if (this.scheduledAt && this.scheduledAt <= new Date() && !this.isPublished) {
+    this.isPublished = true;
+    this.publishedAt = this.scheduledAt;
+    this.scheduledAt = null;
+  }
+  
+  const reactionCount = this.reactions ? Array.from(this.reactions.values()).reduce((sum, count) => sum + count, 0) : 0;
+  const totalInteractions = this.likes.length + this.dislikes.length + (this.shareCount || this.shares || 0) + reactionCount;
   const totalViews = this.viewCount || 1;
   this.engagementRate = totalViews > 0 ? (totalInteractions / totalViews) * 100 : 0;
+  
+  if (this.shares && !this.shareCount) {
+    this.shareCount = this.shares;
+  }
+  
   next();
 });
 
@@ -126,5 +163,8 @@ postSchema.index({
 postSchema.index({ isPublished: 1, publishedAt: -1 });
 postSchema.index({ category: 1, publishedAt: -1 });
 postSchema.index({ tags: 1, publishedAt: -1 });
+postSchema.index({ scheduledAt: 1 }); // For scheduled post queries
+postSchema.index({ author: 1, publishedAt: -1 }); // For author filtering
+postSchema.index({ 'collaborators.user': 1 }); // For collaborator queries
 
 export default mongoose.model('Post', postSchema);

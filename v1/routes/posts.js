@@ -11,7 +11,9 @@ router.put('/update/:id', authenticate, validatePost, postController.updatePost)
 
 router.delete('/delete/:id', authenticate, requireAdmin, postController.deletePost);
 router.get('/', optionalAuthenticate, postController.getPosts);
-router.get('/:slug', optionalAuthenticate, postController.getPostBySlug);
+router.post('/bulk-delete', authenticate, postController.bulkDeletePosts);
+router.put('/bulk-update', authenticate, postController.bulkUpdatePosts);
 router.get('/:postId/related', postController.getRelatedPosts);
+router.get('/:slug', optionalAuthenticate, postController.getPostBySlug);
 
 export default router;

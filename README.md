@@ -74,12 +74,24 @@ curl https://blog-management-sx5c.onrender.com/health
 
 # Production (deployed):
 # Open https://blog-management-sx5c.onrender.com/api-docs in your browser
+
+# 7. (Optional) Seed popular blog categories
+npm run seed:categories
 ```
 
 **Expected Response:**
 ```json
 {"status":"ok","uptime":<seconds>}
 ```
+
+---
+
+## 🗂️ Popular Category Seed Script
+
+- `npm run seed:categories` connects to the database defined in `MONGODB_URL` and upserts 32 high-traffic blog categories inspired by TechCrunch, Wired, HubSpot, Headspace, Lonely Planet, Vogue, and other mainstream publishers.
+- The script is idempotent: rerunning it updates only missing categories without touching existing records.
+- Each category includes an editorial description plus a curated color token for UI filtering or badges.
+- Run the script any time you bootstrap a fresh environment or want to sync with the default taxonomy baseline.
 
 ---
 
@@ -815,6 +827,7 @@ npm run dev        # Start development server with nodemon
 npm test           # Run all tests
 npm run test:watch # Run tests in watch mode
 npm run test:coverage # Run tests with coverage report
+npm run seed:categories # Upsert the default category taxonomy
 ```
 
 ### API Documentation

@@ -10,6 +10,8 @@ import imagesRoutes from './routes/images.js';
 import searchRoutes from './routes/search.js';
 import dashboardRoutes from './routes/dashboard.js';
 import authorsRoutes from './routes/authors.js';
+import pollsRoutes from './routes/polls.js';
+import collaborationsRoutes from './routes/collaborations.js';
 const router = express.Router();
 
 router.use('/auth', authRoutes);
@@ -23,4 +25,6 @@ router.use('/images', imagesRoutes);
 router.use('/search', searchRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/authors', authorsRoutes);
+router.use('/polls', pollsRoutes);
+router.use('/collaborations', collaborationsRoutes);
 export default router;

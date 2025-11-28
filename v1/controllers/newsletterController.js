@@ -226,6 +226,59 @@ export const getSubscriberStats = async (req, res) => {
   }
 };
 
+export const getNewsletterArchive = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Get newsletters from sent emails or create archive from posts
+    // For now, we'll return a list based on posts that triggered newsletters
+    const Post = (await import('../models/post.js')).default;
+    
+    const newsletters = await Post.find({
+      isPublished: true,
+      publishedAt: { $exists: true }
+    })
+      .select('title excerpt featuredImage publishedAt')
+      .sort({ publishedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const total = await Post.countDocuments({
+      isPublished: true,
+      publishedAt: { $exists: true }
+    });
+
+    // Format as newsletters
+    const formattedNewsletters = newsletters.map(post => ({
+      _id: post._id,
+      subject: post.title,
+      content: post.excerpt || '',
+      body: post.excerpt || '',
+      sentAt: post.publishedAt,
+      createdAt: post.publishedAt,
+      recipientCount: 0 // Would need to track this
+    }));
+
+    res.json({
+      newsletters: formattedNewsletters,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalNewsletters: total
+      }
+    });
+  } catch (error) {
+    console.error('Get newsletter archive error:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch newsletter archive',
+      error: error.message 
+    });
+  }
+};
+
 export const getAllSubscribers = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;

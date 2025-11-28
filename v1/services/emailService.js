@@ -382,9 +382,9 @@ export const sendPasswordChangedEmail = async (email) => {
             <strong style="display:block;margin-bottom:6px;color:#0f172a;">Security snapshot</strong>
             <p style="margin:0;color:#1f2937;">Time: ${new Date().toLocaleString()}<br>Location: Account activity</p>
           </div>
-          <p style="margin:0 0 14px;">If this wasn’t you, please reset your password immediately and let our team know so we can help secure your account.</p>
+          <p style="margin:0 0 14px;">If this wasn't you, please reset your password immediately and let our team know so we can help secure your account.</p>
           <ul style="padding-left:18px;margin:0;">
-            <li style="margin-bottom:10px;">Reset your password using the “Forgot password” option.</li>
+            <li style="margin-bottom:10px;">Reset your password using the "Forgot password" option.</li>
             <li style="margin-bottom:10px;">Contact support so we can assist you.</li>
             <li>Review your account activity for anything unexpected.</li>
             </ul>
@@ -398,6 +398,49 @@ export const sendPasswordChangedEmail = async (email) => {
     return true;
   } catch (error) {
     console.error('Failed to send password changed email:', error);
+  }
+};
+
+export const sendCollaborationInvitation = async (email, { postTitle, inviterName, role, invitationId }) => {
+  try {
+    const acceptUrl = `${process.env.FRONTEND_URL}/collaboration/accept/${invitationId}`;
+    const rejectUrl = `${process.env.FRONTEND_URL}/collaboration/reject/${invitationId}`;
+
+    const roleLabels = {
+      'co-author': 'Co-Author',
+      'editor': 'Editor',
+      'reviewer': 'Reviewer'
+    };
+
+    const msg = {
+      from: process.env.FROM_EMAIL,
+      to: email,
+      subject: `${inviterName} invited you to collaborate on "${postTitle}"`,
+      html: buildEmailTemplate({
+        preheader: `You've been invited to collaborate on "${postTitle}"`,
+        heroTitle: 'Collaboration Invitation',
+        heroSubtitle: `${inviterName} wants to work with you`,
+        intro: `${inviterName} has invited you to collaborate on their post "${postTitle}" as a ${roleLabels[role] || role}.`,
+        contentHtml: `
+          <div style="background:rgba(26,137,23,0.08);padding:18px 20px;border-radius:16px;margin-bottom:24px;border:1px solid rgba(26,137,23,0.12);">
+            <strong style="display:block;margin-bottom:8px;color:#0f172a;">Post Details</strong>
+            <p style="margin:0;color:#1f2937;">Title: <strong>${postTitle}</strong><br>Role: <strong>${roleLabels[role] || role}</strong><br>Invited by: <strong>${inviterName}</strong></p>
+          </div>
+          <p style="margin:0 0 14px;">As a ${roleLabels[role] || role}, you'll be able to contribute to this post and help shape the final content.</p>
+        `,
+        buttonText: 'Accept Invitation',
+        buttonUrl: acceptUrl,
+        outroHtml: `You can also <a href="${rejectUrl}" style="color:#1A8917;text-decoration:none;">decline this invitation</a> if you're unable to participate.`,
+        footerNote: `This invitation expires in 7 days.`,
+      }),
+    };
+
+    await sgMail.send(msg);
+    console.log('Collaboration invitation sent to:', email);
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to send collaboration invitation:', error);
+    throw new Error(`Failed to send collaboration invitation: ${error.message}`);
   }
 };
 

@@ -11,6 +11,7 @@ router.post('/:postId/dislike', authenticate, interactionController.dislikePost)
 router.post('/:postId/share', interactionController.sharePost);
 router.post('/:postId/bookmark', authenticate, interactionController.bookmarkPost);
 router.get('/:postId/interactions', interactionController.getPostInteractions);
-
+router.post('/:postId/react', authenticate, interactionController.reactToPost);
+router.get('/:postId/reactions', interactionController.getPostReactions);
 
 export default router;
