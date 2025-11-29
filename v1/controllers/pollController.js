@@ -113,15 +113,75 @@ export const voteOnPoll = async (req, res) => {
 
     // Check if user already voted
     const existingVote = await PollVote.findOne({ poll: pollId, user: userId });
+    
     if (existingVote) {
-      return res.status(400).json({ message: 'You have already voted on this poll' });
+      // Check if user can change their vote
+      const now = new Date();
+      const firstVotedAt = existingVote.firstVotedAt || existingVote.createdAt;
+      const timeSinceFirstVote = (now - firstVotedAt) / 1000 / 60; // minutes
+      const maxChanges = existingVote.maxChanges || 2;
+      const changeWindow = existingVote.changeWindowMinutes || 5;
+      
+      // Check if within time window
+      if (timeSinceFirstVote > changeWindow) {
+        return res.status(400).json({ 
+          message: 'Vote change window has expired. You can only change your vote within 5 minutes of your first vote.' 
+        });
+      }
+      
+      // Check if change limit reached
+      if (existingVote.changeCount >= maxChanges) {
+        return res.status(400).json({ 
+          message: `You have reached the maximum number of vote changes (${maxChanges}). Your vote is now locked.` 
+        });
+      }
+      
+      // User can change vote - update it
+      const oldOptionId = existingVote.optionId;
+      
+      // Decrement old option count
+      if (poll.results && poll.results.has(oldOptionId)) {
+        const oldCount = poll.results.get(oldOptionId) || 0;
+        if (oldCount > 0) {
+          poll.results.set(oldOptionId, oldCount - 1);
+        }
+      }
+      
+      // Update vote
+      existingVote.optionId = optionId;
+      existingVote.changeCount = (existingVote.changeCount || 0) + 1;
+      await existingVote.save();
+      
+      // Increment new option count
+      const currentCount = poll.results?.get(optionId) || 0;
+      if (!poll.results) {
+        poll.results = new Map();
+      }
+      poll.results.set(optionId, currentCount + 1);
+      await poll.save();
+
+      const timeRemaining = Math.ceil(changeWindow - timeSinceFirstVote);
+      const changesRemaining = maxChanges - existingVote.changeCount;
+
+      res.json({
+        message: 'Vote updated successfully',
+        results: Object.fromEntries(poll.results || []),
+        timeRemainingMinutes: timeRemaining,
+        changesRemaining: changesRemaining,
+        canChangeAgain: timeRemaining > 0 && changesRemaining > 0
+      });
+      return;
     }
 
-    // Create vote
+    // Create new vote
     const vote = new PollVote({
       poll: pollId,
       user: userId,
-      optionId
+      optionId,
+      firstVotedAt: new Date(),
+      changeCount: 0,
+      maxChanges: 2,
+      changeWindowMinutes: 5
     });
     await vote.save();
 
@@ -135,7 +195,10 @@ export const voteOnPoll = async (req, res) => {
 
     res.json({
       message: 'Vote recorded successfully',
-      results: Object.fromEntries(poll.results || [])
+      results: Object.fromEntries(poll.results || []),
+      timeRemainingMinutes: 5,
+      changesRemaining: 2,
+      canChangeAgain: true
     });
   } catch (error) {
     console.error('Vote on poll error:', error);
@@ -157,9 +220,26 @@ export const getPollResults = async (req, res) => {
     }
 
     let userVote = null;
+    let canChangeVote = false;
+    let timeRemainingMinutes = 0;
+    let changesRemaining = 0;
+    
     if (userId) {
       const vote = await PollVote.findOne({ poll: pollId, user: userId });
-      userVote = vote ? vote.optionId : null;
+      if (vote) {
+        userVote = vote.optionId;
+        
+        // Check if user can still change vote
+        const now = new Date();
+        const firstVotedAt = vote.firstVotedAt || vote.createdAt;
+        const timeSinceFirstVote = (now - firstVotedAt) / 1000 / 60; // minutes
+        const maxChanges = vote.maxChanges || 2;
+        const changeWindow = vote.changeWindowMinutes || 5;
+        
+        timeRemainingMinutes = Math.max(0, Math.ceil(changeWindow - timeSinceFirstVote));
+        changesRemaining = Math.max(0, maxChanges - (vote.changeCount || 0));
+        canChangeVote = timeRemainingMinutes > 0 && changesRemaining > 0;
+      }
     }
 
     const totalVotes = Array.from(poll.results?.values() || []).reduce((sum, count) => sum + count, 0);
@@ -174,7 +254,10 @@ export const getPollResults = async (req, res) => {
       },
       results: Object.fromEntries(poll.results || []),
       totalVotes,
-      userVote
+      userVote,
+      canChangeVote,
+      timeRemainingMinutes,
+      changesRemaining
     });
   } catch (error) {
     console.error('Get poll results error:', error);
@@ -231,9 +314,26 @@ export const getPollById = async (req, res) => {
     }
 
     let userVote = null;
+    let canChangeVote = false;
+    let timeRemainingMinutes = 0;
+    let changesRemaining = 0;
+    
     if (userId) {
       const vote = await PollVote.findOne({ poll: pollId, user: userId });
-      userVote = vote ? vote.optionId : null;
+      if (vote) {
+        userVote = vote.optionId;
+        
+        // Check if user can still change vote
+        const now = new Date();
+        const firstVotedAt = vote.firstVotedAt || vote.createdAt;
+        const timeSinceFirstVote = (now - firstVotedAt) / 1000 / 60; // minutes
+        const maxChanges = vote.maxChanges || 2;
+        const changeWindow = vote.changeWindowMinutes || 5;
+        
+        timeRemainingMinutes = Math.max(0, Math.ceil(changeWindow - timeSinceFirstVote));
+        changesRemaining = Math.max(0, maxChanges - (vote.changeCount || 0));
+        canChangeVote = timeRemainingMinutes > 0 && changesRemaining > 0;
+      }
     }
 
     const totalVotes = Array.from(poll.results?.values() || []).reduce((sum, count) => sum + count, 0);
@@ -249,7 +349,10 @@ export const getPollById = async (req, res) => {
       },
       results: Object.fromEntries(poll.results || []),
       totalVotes,
-      userVote
+      userVote,
+      canChangeVote,
+      timeRemainingMinutes,
+      changesRemaining
     });
   } catch (error) {
     console.error('Get poll by ID error:', error);
@@ -357,9 +460,26 @@ export const getPollByPost = async (req, res) => {
     }
 
     let userVote = null;
+    let canChangeVote = false;
+    let timeRemainingMinutes = 0;
+    let changesRemaining = 0;
+    
     if (userId) {
       const vote = await PollVote.findOne({ poll: poll._id, user: userId });
-      userVote = vote ? vote.optionId : null;
+      if (vote) {
+        userVote = vote.optionId;
+        
+        // Check if user can still change vote
+        const now = new Date();
+        const firstVotedAt = vote.firstVotedAt || vote.createdAt;
+        const timeSinceFirstVote = (now - firstVotedAt) / 1000 / 60; // minutes
+        const maxChanges = vote.maxChanges || 2;
+        const changeWindow = vote.changeWindowMinutes || 5;
+        
+        timeRemainingMinutes = Math.max(0, Math.ceil(changeWindow - timeSinceFirstVote));
+        changesRemaining = Math.max(0, maxChanges - (vote.changeCount || 0));
+        canChangeVote = timeRemainingMinutes > 0 && changesRemaining > 0;
+      }
     }
 
     const totalVotes = Array.from(poll.results?.values() || []).reduce((sum, count) => sum + count, 0);
@@ -374,7 +494,10 @@ export const getPollByPost = async (req, res) => {
       },
       results: Object.fromEntries(poll.results || []),
       totalVotes,
-      userVote
+      userVote,
+      canChangeVote,
+      timeRemainingMinutes,
+      changesRemaining
     });
   } catch (error) {
     console.error('Get poll by post error:', error);

@@ -16,6 +16,22 @@ const pollVoteSchema = new mongoose.Schema({
   optionId: {
     type: String,
     required: true
+  },
+  firstVotedAt: {
+    type: Date,
+    default: Date.now
+  },
+  changeCount: {
+    type: Number,
+    default: 0
+  },
+  maxChanges: {
+    type: Number,
+    default: 2 // Allow 2 changes (3 total votes: initial + 2 changes)
+  },
+  changeWindowMinutes: {
+    type: Number,
+    default: 5 // 5 minute window to change votes
   }
 }, {
   timestamps: true
