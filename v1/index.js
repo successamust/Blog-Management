@@ -12,6 +12,7 @@ import dashboardRoutes from './routes/dashboard.js';
 import authorsRoutes from './routes/authors.js';
 import pollsRoutes from './routes/polls.js';
 import collaborationsRoutes from './routes/collaborations.js';
+import templatesRoutes from './routes/templates.js';
 const router = express.Router();
 
 router.use('/auth', authRoutes);
@@ -27,4 +28,5 @@ router.use('/dashboard', dashboardRoutes);
 router.use('/authors', authorsRoutes);
 router.use('/polls', pollsRoutes);
 router.use('/collaborations', collaborationsRoutes);
+router.use('/templates', templatesRoutes);
 export default router;
