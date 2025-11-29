@@ -5,7 +5,7 @@ import User from '../models/user.js';
 
 export const createPoll = async (req, res) => {
   try {
-    const { postId, question, description, options } = req.body;
+    const { postId, question, description, options, isActive } = req.body;
 
     if (!postId || !question || !options || !Array.isArray(options) || options.length < 2) {
       return res.status(400).json({ 
@@ -13,16 +13,20 @@ export const createPoll = async (req, res) => {
       });
     }
 
-    // Check if post exists and user is author
+    // Check if post exists and user is author or collaborator
     const post = await Post.findById(postId);
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
 
     const isAuthor = post.author.toString() === req.user._id.toString();
-    if (!req.user.isAdmin() && !isAuthor) {
+    const isCollaborator = post.collaborators?.some(
+      collab => collab.user.toString() === req.user._id.toString()
+    );
+    
+    if (!req.user.isAdmin() && !isAuthor && !isCollaborator) {
       return res.status(403).json({ 
-        message: 'Only post author or admin can create polls' 
+        message: 'Only post author, collaborators, or admin can create polls' 
       });
     }
 
@@ -37,9 +41,10 @@ export const createPoll = async (req, res) => {
       question,
       description,
       options: options.map(opt => ({
-        id: opt.id || opt.text.toLowerCase().replace(/\s+/g, '-'),
+        id: opt.id || opt.text.toLowerCase().replace(/\s+/g, '-').substring(0, 50),
         text: opt.text
-      }))
+      })),
+      isActive: isActive !== undefined ? isActive : true
     });
 
     await poll.save();
@@ -147,6 +152,167 @@ export const getPollResults = async (req, res) => {
     console.error('Get poll results error:', error);
     res.status(500).json({ 
       message: 'Failed to fetch poll results',
+      error: error.message 
+    });
+  }
+};
+
+export const getAllPolls = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, postId, isActive } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const query = {};
+    if (postId) query.post = postId;
+    if (isActive !== undefined) query.isActive = isActive === 'true';
+
+    const polls = await Poll.find(query)
+      .populate('post', 'title slug author')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Poll.countDocuments(query);
+
+    res.json({
+      polls,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / parseInt(limit)),
+        totalPolls: total,
+        limit: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Get all polls error:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch polls',
+      error: error.message 
+    });
+  }
+};
+
+export const getPollById = async (req, res) => {
+  try {
+    const { pollId } = req.params;
+    const userId = req.user?._id;
+
+    const poll = await Poll.findById(pollId).populate('post', 'title slug author');
+    if (!poll) {
+      return res.status(404).json({ message: 'Poll not found' });
+    }
+
+    let userVote = null;
+    if (userId) {
+      const vote = await PollVote.findOne({ poll: pollId, user: userId });
+      userVote = vote ? vote.optionId : null;
+    }
+
+    const totalVotes = Array.from(poll.results?.values() || []).reduce((sum, count) => sum + count, 0);
+
+    res.json({
+      poll: {
+        id: poll._id,
+        question: poll.question,
+        description: poll.description,
+        options: poll.options,
+        isActive: poll.isActive,
+        post: poll.post
+      },
+      results: Object.fromEntries(poll.results || []),
+      totalVotes,
+      userVote
+    });
+  } catch (error) {
+    console.error('Get poll by ID error:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch poll',
+      error: error.message 
+    });
+  }
+};
+
+export const updatePoll = async (req, res) => {
+  try {
+    const { pollId } = req.params;
+    const { question, description, options, isActive } = req.body;
+
+    const poll = await Poll.findById(pollId).populate('post');
+    if (!poll) {
+      return res.status(404).json({ message: 'Poll not found' });
+    }
+
+    const post = poll.post;
+    const isAuthor = post.author.toString() === req.user._id.toString();
+    const isCollaborator = post.collaborators?.some(
+      collab => collab.user.toString() === req.user._id.toString()
+    );
+
+    if (!req.user.isAdmin() && !isAuthor && !isCollaborator) {
+      return res.status(403).json({ 
+        message: 'Only post author, collaborators, or admin can update polls' 
+      });
+    }
+
+    if (question) poll.question = question;
+    if (description !== undefined) poll.description = description;
+    if (options && Array.isArray(options) && options.length >= 2) {
+      poll.options = options.map(opt => ({
+        id: opt.id || opt.text.toLowerCase().replace(/\s+/g, '-').substring(0, 50),
+        text: opt.text
+      }));
+    }
+    if (isActive !== undefined) poll.isActive = isActive;
+
+    await poll.save();
+
+    res.json({
+      message: 'Poll updated successfully',
+      poll
+    });
+  } catch (error) {
+    console.error('Update poll error:', error);
+    res.status(500).json({ 
+      message: 'Failed to update poll',
+      error: error.message 
+    });
+  }
+};
+
+export const deletePoll = async (req, res) => {
+  try {
+    const { pollId } = req.params;
+
+    const poll = await Poll.findById(pollId).populate('post');
+    if (!poll) {
+      return res.status(404).json({ message: 'Poll not found' });
+    }
+
+    const post = poll.post;
+    const isAuthor = post.author.toString() === req.user._id.toString();
+    const isCollaborator = post.collaborators?.some(
+      collab => collab.user.toString() === req.user._id.toString()
+    );
+
+    if (!req.user.isAdmin() && !isAuthor && !isCollaborator) {
+      return res.status(403).json({ 
+        message: 'Only post author, collaborators, or admin can delete polls' 
+      });
+    }
+
+    // Delete all votes associated with this poll
+    await PollVote.deleteMany({ poll: pollId });
+
+    // Delete the poll
+    await Poll.findByIdAndDelete(pollId);
+
+    res.json({
+      message: 'Poll deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete poll error:', error);
+    res.status(500).json({ 
+      message: 'Failed to delete poll',
       error: error.message 
     });
   }

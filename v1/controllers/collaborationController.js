@@ -2,6 +2,16 @@ import Post from '../models/post.js';
 import User from '../models/user.js';
 import CollaborationInvitation from '../models/collaborationInvitation.js';
 import { sendCollaborationInvitation } from '../services/emailService.js';
+import mongoose from 'mongoose';
+
+const isValidObjectId = (id) => {
+  return mongoose.Types.ObjectId.isValid(id);
+};
+
+const isValidEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
 
 export const inviteCollaborator = async (req, res) => {
   try {
@@ -11,6 +21,18 @@ export const inviteCollaborator = async (req, res) => {
     if (!email || !role) {
       return res.status(400).json({ 
         message: 'Email and role are required' 
+      });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ 
+        message: 'Invalid email format' 
+      });
+    }
+
+    if (!isValidObjectId(postId)) {
+      return res.status(400).json({ 
+        message: 'Invalid post ID' 
       });
     }
 
@@ -35,8 +57,8 @@ export const inviteCollaborator = async (req, res) => {
 
     const invitedUser = await User.findOne({ email: email.toLowerCase() });
     if (!invitedUser) {
-      return res.status(404).json({ 
-        message: 'User with this email not found. They must register first.' 
+      return res.status(400).json({ 
+        message: 'Unable to send invitation. Please verify the email address.' 
       });
     }
 
@@ -77,7 +99,7 @@ export const inviteCollaborator = async (req, res) => {
         invitationId: invitation._id
       });
     } catch (emailError) {
-      console.error('Failed to send collaboration invitation email:', emailError);
+      // Email sending failed, but invitation was created
     }
 
     res.status(201).json({
@@ -85,10 +107,9 @@ export const inviteCollaborator = async (req, res) => {
       invitation
     });
   } catch (error) {
-    console.error('Invite collaborator error:', error);
     res.status(500).json({ 
       message: 'Failed to send invitation',
-      error: error.message 
+      error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message 
     });
   }
 };
@@ -97,6 +118,10 @@ export const acceptInvitation = async (req, res) => {
   try {
     const { invitationId } = req.params;
     const userId = req.user._id;
+
+    if (!isValidObjectId(invitationId)) {
+      return res.status(400).json({ message: 'Invalid invitation ID' });
+    }
 
     const invitation = await CollaborationInvitation.findById(invitationId);
     if (!invitation) {
@@ -157,10 +182,9 @@ export const acceptInvitation = async (req, res) => {
       post: await Post.findById(post._id).populate('collaborators.user', 'username email')
     });
   } catch (error) {
-    console.error('Accept invitation error:', error);
     res.status(500).json({ 
       message: 'Failed to accept invitation',
-      error: error.message 
+      error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message 
     });
   }
 };
@@ -169,6 +193,10 @@ export const rejectInvitation = async (req, res) => {
   try {
     const { invitationId } = req.params;
     const userId = req.user._id;
+
+    if (!isValidObjectId(invitationId)) {
+      return res.status(400).json({ message: 'Invalid invitation ID' });
+    }
 
     const invitation = await CollaborationInvitation.findById(invitationId);
     if (!invitation) {
@@ -189,10 +217,9 @@ export const rejectInvitation = async (req, res) => {
       message: 'Invitation rejected'
     });
   } catch (error) {
-    console.error('Reject invitation error:', error);
     res.status(500).json({ 
       message: 'Failed to reject invitation',
-      error: error.message 
+      error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message 
     });
   }
 };
@@ -200,6 +227,10 @@ export const rejectInvitation = async (req, res) => {
 export const getPostCollaborators = async (req, res) => {
   try {
     const { postId } = req.params;
+
+    if (!isValidObjectId(postId)) {
+      return res.status(400).json({ message: 'Invalid post ID' });
+    }
 
     const post = await Post.findById(postId)
       .populate('author', 'username email profilePicture')
@@ -215,10 +246,9 @@ export const getPostCollaborators = async (req, res) => {
       collaborators: post.collaborators || []
     });
   } catch (error) {
-    console.error('Get post collaborators error:', error);
     res.status(500).json({ 
       message: 'Failed to fetch collaborators',
-      error: error.message 
+      error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message 
     });
   }
 };
@@ -226,6 +256,10 @@ export const getPostCollaborators = async (req, res) => {
 export const removeCollaborator = async (req, res) => {
   try {
     const { postId, userId } = req.params;
+
+    if (!isValidObjectId(postId) || !isValidObjectId(userId)) {
+      return res.status(400).json({ message: 'Invalid post ID or user ID' });
+    }
 
     const post = await Post.findById(postId);
     if (!post) {
@@ -254,10 +288,9 @@ export const removeCollaborator = async (req, res) => {
       post
     });
   } catch (error) {
-    console.error('Remove collaborator error:', error);
     res.status(500).json({ 
       message: 'Failed to remove collaborator',
-      error: error.message 
+      error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message 
     });
   }
 };
@@ -297,10 +330,9 @@ export const getUserInvitations = async (req, res) => {
       invitations: allInvitations
     });
   } catch (error) {
-    console.error('Get user invitations error:', error);
     res.status(500).json({ 
       message: 'Failed to fetch invitations',
-      error: error.message 
+      error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message 
     });
   }
 };
@@ -309,6 +341,10 @@ export const getPostInvitations = async (req, res) => {
   try {
     const { postId } = req.params;
     const userId = req.user._id;
+
+    if (!isValidObjectId(postId)) {
+      return res.status(400).json({ message: 'Invalid post ID' });
+    }
 
     const post = await Post.findById(postId);
     if (!post) {
@@ -346,7 +382,6 @@ export const getPostInvitations = async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error('Get post invitations error:', error);
     res.status(500).json({ message: 'Failed to fetch invitations' });
   }
 };
@@ -355,6 +390,10 @@ export const getSentInvitations = async (req, res) => {
   try {
     const { postId } = req.params;
     const userId = req.user._id;
+
+    if (!isValidObjectId(postId)) {
+      return res.status(400).json({ message: 'Invalid post ID' });
+    }
 
     const post = await Post.findById(postId);
     if (!post) {
@@ -387,7 +426,6 @@ export const getSentInvitations = async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error('Get sent invitations error:', error);
     res.status(500).json({ message: 'Failed to fetch sent invitations' });
   }
 };
@@ -415,7 +453,6 @@ export const getMySentInvitations = async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error('Get my sent invitations error:', error);
     res.status(500).json({ message: 'Failed to fetch sent invitations' });
   }
 };
@@ -425,8 +462,8 @@ export const revokeInvitation = async (req, res) => {
     const { invitationId } = req.params;
     const userId = req.user._id;
 
-    if (!invitationId) {
-      return res.status(400).json({ message: 'Invitation ID is required' });
+    if (!invitationId || !isValidObjectId(invitationId)) {
+      return res.status(400).json({ message: 'Invalid invitation ID' });
     }
 
     const invitation = await CollaborationInvitation.findById(invitationId);
@@ -471,7 +508,6 @@ export const revokeInvitation = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Revoke invitation error:', error);
     res.status(500).json({ 
       message: 'Failed to revoke invitation',
       error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message 
