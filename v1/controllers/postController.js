@@ -225,9 +225,16 @@ export const updatePost = async (req, res) => {
     }
 
     const isAuthor = post.author.toString() === req.user._id.toString();
-    if (!req.user.isAdmin() && !isAuthor) {
+    const isCollaborator = post.collaborators?.some(
+      collab => {
+        const collabUserId = collab.user?._id || collab.user;
+        return collabUserId && collabUserId.toString() === req.user._id.toString();
+      }
+    );
+    
+    if (!req.user.isAdmin() && !isAuthor && !isCollaborator) {
       return res.status(403).json({ 
-        message: 'Access denied. Not authorized to update this post.' 
+        message: 'Access denied. Only post author, collaborators, or admin can update this post.' 
       });
     }
 
@@ -411,13 +418,20 @@ export const bulkUpdatePosts = async (req, res) => {
 
     // Check permissions
     if (req.user.role !== 'admin') {
-      const posts = await Post.find({ _id: { $in: postIds } }).select('author');
-      const unauthorized = posts.some(post => 
-        post.author.toString() !== req.user._id.toString()
-      );
+      const posts = await Post.find({ _id: { $in: postIds } }).select('author collaborators');
+      const unauthorized = posts.some(post => {
+        const isAuthor = post.author.toString() === req.user._id.toString();
+        const isCollaborator = post.collaborators?.some(
+          collab => {
+            const collabUserId = collab.user?._id || collab.user;
+            return collabUserId && collabUserId.toString() === req.user._id.toString();
+          }
+        );
+        return !isAuthor && !isCollaborator;
+      });
       if (unauthorized) {
         return res.status(403).json({ 
-          message: 'You can only update your own posts' 
+          message: 'You can only update posts you authored or are collaborating on' 
         });
       }
     }
