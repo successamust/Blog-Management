@@ -5,9 +5,15 @@ import User from '../models/user.js';
 
 export const createPoll = async (req, res) => {
   try {
+    console.log('=== CREATE POLL REQUEST ===');
+    console.log('Request body:', req.body);
+    console.log('User:', req.user?._id, req.user?.email);
+    console.log('Headers:', req.headers);
+    
     const { postId, question, description, options, isActive } = req.body;
 
     if (!postId || !question || !options || !Array.isArray(options) || options.length < 2) {
+      console.log('Validation failed - missing required fields');
       return res.status(400).json({ 
         message: 'Post ID, question, and at least 2 options are required' 
       });
@@ -16,18 +22,32 @@ export const createPoll = async (req, res) => {
     // Check if post exists and user is author or collaborator
     const post = await Post.findById(postId);
     if (!post) {
+      console.log('Post not found:', postId);
       return res.status(404).json({ message: 'Post not found' });
     }
+
+    console.log('Post found:', post.title);
+    console.log('Post author:', post.author);
+    console.log('Post collaborators:', post.collaborators);
 
     const isAuthor = post.author.toString() === req.user._id.toString();
     const isCollaborator = post.collaborators?.some(
       collab => {
         const collabUserId = collab.user?._id || collab.user;
-        return collabUserId && collabUserId.toString() === req.user._id.toString();
+        const isMatch = collabUserId && collabUserId.toString() === req.user._id.toString();
+        if (isMatch) {
+          console.log('User is a collaborator:', collabUserId);
+        }
+        return isMatch;
       }
     );
     
+    console.log('Is author:', isAuthor);
+    console.log('Is collaborator:', isCollaborator);
+    console.log('Is admin:', req.user.isAdmin());
+    
     if (!req.user.isAdmin() && !isAuthor && !isCollaborator) {
+      console.log('Permission denied - user is not author, collaborator, or admin');
       return res.status(403).json({ 
         message: 'Only post author, collaborators, or admin can create polls' 
       });
@@ -51,10 +71,12 @@ export const createPoll = async (req, res) => {
     });
 
     await poll.save();
+    console.log('Poll saved successfully:', poll._id);
 
     // Populate the poll with post info for better response
     const populatedPoll = await Poll.findById(poll._id).populate('post', 'title slug');
 
+    console.log('Sending response with poll:', populatedPoll?._id || poll._id);
     res.status(201).json({
       message: 'Poll created successfully',
       poll: populatedPoll || poll
