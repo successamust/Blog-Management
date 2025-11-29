@@ -21,7 +21,10 @@ export const createPoll = async (req, res) => {
 
     const isAuthor = post.author.toString() === req.user._id.toString();
     const isCollaborator = post.collaborators?.some(
-      collab => collab.user.toString() === req.user._id.toString()
+      collab => {
+        const collabUserId = collab.user?._id || collab.user;
+        return collabUserId && collabUserId.toString() === req.user._id.toString();
+      }
     );
     
     if (!req.user.isAdmin() && !isAuthor && !isCollaborator) {
@@ -49,9 +52,12 @@ export const createPoll = async (req, res) => {
 
     await poll.save();
 
+    // Populate the poll with post info for better response
+    const populatedPoll = await Poll.findById(poll._id).populate('post', 'title slug');
+
     res.status(201).json({
       message: 'Poll created successfully',
-      poll
+      poll: populatedPoll || poll
     });
   } catch (error) {
     console.error('Create poll error:', error);
