@@ -10,19 +10,10 @@ router.get('/', optionalAuthenticate, pollController.getAllPolls);
 // Create poll
 router.post('/', authenticate, pollController.createPoll);
 
-// Get poll by post
+// Get poll by post (must be before /:pollId)
 router.get('/post/:postId', optionalAuthenticate, pollController.getPollByPost);
 
-// Get poll by ID
-router.get('/:pollId', optionalAuthenticate, pollController.getPollById);
-
-// Update poll
-router.put('/:pollId', authenticate, pollController.updatePoll);
-router.patch('/:pollId', authenticate, pollController.updatePoll);
-
-// Delete poll
-router.delete('/:pollId', authenticate, pollController.deletePoll);
-
+// Specific routes must come before generic /:pollId route
 // Vote on poll
 router.post('/:pollId/vote', authenticate, pollController.voteOnPoll);
 
@@ -34,6 +25,16 @@ router.get('/:pollId/analytics', authenticate, pollController.getPollAnalytics);
 
 // Export poll results
 router.get('/:pollId/export', authenticate, pollController.exportPollResults);
+
+// Get poll by ID (must be after specific routes)
+router.get('/:pollId', optionalAuthenticate, pollController.getPollById);
+
+// Update poll
+router.put('/:pollId', authenticate, pollController.updatePoll);
+router.patch('/:pollId', authenticate, pollController.updatePoll);
+
+// Delete poll
+router.delete('/:pollId', authenticate, pollController.deletePoll);
 
 export default router;
 
