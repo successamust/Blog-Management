@@ -29,5 +29,11 @@ router.post('/:pollId/vote', authenticate, pollController.voteOnPoll);
 // Get poll results
 router.get('/:pollId/results', optionalAuthenticate, pollController.getPollResults);
 
+// Get poll analytics
+router.get('/:pollId/analytics', authenticate, pollController.getPollAnalytics);
+
+// Export poll results
+router.get('/:pollId/export', authenticate, pollController.exportPollResults);
+
 export default router;
 
