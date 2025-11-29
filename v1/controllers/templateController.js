@@ -94,16 +94,47 @@ const initializeDefaultTemplates = async (adminUserId) => {
   }
 };
 
+// Auto-initialize on server startup or first access (if no admin available, use system user)
+const autoInitializeDefaults = async () => {
+  try {
+    const existingDefaults = await Template.countDocuments({ isDefault: true });
+    if (existingDefaults === 0) {
+      // Try to find an admin user, otherwise use null (will require adminUserId on next access)
+      const User = (await import('../models/user.js')).default;
+      const adminUser = await User.findOne({ role: 'admin' });
+      const adminUserId = adminUser?._id || null;
+      
+      if (adminUserId) {
+        await initializeDefaultTemplates(adminUserId);
+      } else {
+        // If no admin exists yet, we'll initialize on first admin access
+        console.log('No admin user found. Default templates will initialize on first admin access.');
+      }
+    }
+  } catch (error) {
+    console.error('Error auto-initializing default templates:', error);
+  }
+};
+
 // Get all templates (default + user's custom templates)
 export const getAllTemplates = async (req, res) => {
   try {
     const userId = req.user?._id;
 
-    // Auto-initialize default templates if they don't exist and user is admin
+    // Auto-initialize default templates if they don't exist
     const defaultCount = await Template.countDocuments({ isDefault: true });
-    if (defaultCount === 0 && req.user && req.user.role === 'admin') {
-      // Auto-initialize defaults if admin is accessing and no defaults exist
-      await initializeDefaultTemplates(req.user._id);
+    if (defaultCount === 0) {
+      // If admin is accessing, use their ID; otherwise try to find any admin
+      if (req.user && req.user.role === 'admin') {
+        await initializeDefaultTemplates(req.user._id);
+      } else {
+        // Try to find an admin user to initialize
+        const User = (await import('../models/user.js')).default;
+        const adminUser = await User.findOne({ role: 'admin' });
+        if (adminUser) {
+          await initializeDefaultTemplates(adminUser._id);
+        }
+      }
     }
 
     // Get default templates (available to all)
@@ -167,22 +198,29 @@ export const createTemplate = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, title, excerpt, content, category, tags } = req.body;
+    const { name, title, excerpt, content, category, tags, isDefault } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ message: 'Template name is required' });
     }
 
-    // Check if template with same name exists for this user
+    // Only admins can create default templates
+    const willBeDefault = isDefault === true && req.user.role === 'admin';
+    
+    // Check if template with same name exists
     const existingTemplate = await Template.findOne({
       name: name.trim(),
-      createdBy: req.user._id,
-      isDefault: false,
+      ...(willBeDefault 
+        ? { isDefault: true } 
+        : { createdBy: req.user._id, isDefault: false }
+      ),
     });
 
     if (existingTemplate) {
       return res.status(400).json({
-        message: 'You already have a template with this name',
+        message: willBeDefault
+          ? 'A default template with this name already exists'
+          : 'You already have a template with this name',
       });
     }
 
@@ -193,7 +231,7 @@ export const createTemplate = async (req, res) => {
       content: content || '',
       category: category?.trim() || '',
       tags: tags?.trim() || '',
-      isDefault: false,
+      isDefault: willBeDefault,
       createdBy: req.user._id,
     });
 
@@ -201,7 +239,9 @@ export const createTemplate = async (req, res) => {
     await template.populate('createdBy', 'username');
 
     res.status(201).json({
-      message: 'Template created successfully',
+      message: willBeDefault
+        ? 'Default template created successfully (available to all users)'
+        : 'Template created successfully',
       template,
     });
   } catch (error) {
@@ -221,7 +261,7 @@ export const updateTemplate = async (req, res) => {
     }
 
     const { templateId } = req.params;
-    const { name, title, excerpt, content, category, tags } = req.body;
+    const { name, title, excerpt, content, category, tags, isDefault } = req.body;
 
     const template = await Template.findById(templateId);
 
@@ -244,6 +284,12 @@ export const updateTemplate = async (req, res) => {
           message: 'You can only edit your own templates',
         });
       }
+      // Cannot convert custom template to default via update
+      if (isDefault === true) {
+        return res.status(400).json({
+          message: 'Cannot convert custom template to default. Create a new default template instead.',
+        });
+      }
     }
 
     // Update fields
@@ -253,6 +299,8 @@ export const updateTemplate = async (req, res) => {
     if (content !== undefined) template.content = content || '';
     if (category !== undefined) template.category = category?.trim() || '';
     if (tags !== undefined) template.tags = tags?.trim() || '';
+    // Only allow changing isDefault for default templates (to false) or if admin is creating new default
+    // But we don't allow converting custom to default via update
 
     await template.save();
     await template.populate('createdBy', 'username');
